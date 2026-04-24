@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Sailing Planner Course to Steer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon.png">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#ffffff">
+</head>
+<body>
+
+    <div id="launchSplash" class="launch-splash">
+        <img src="icon-splash.png" class="splash-image" alt="Sailing Planner splash">
+    </div>
+
+    <div id="map"></div>
+
+    <div id="topRouteBar" class="top-route-bar">
+        <div class="top-route-main">
+            <div class="top-route-kicker">Sailing Planner</div>
+            <div id="topRouteTitle" class="top-route-title">Untitled route</div>
+            <div id="topRouteInlineStats" class="top-route-inline-stats">— • —</div>
+            <div id="topRouteSubtitle" class="top-route-subtitle">Turn on Add Waypoints, then tap the map to begin plotting.</div>
+        </div>
+        <div class="top-route-side">
+            <div class="top-route-stats">
+                <div class="top-route-stat">
+                    <span class="top-route-stat-label">Distance</span>
+                    <span id="topRouteDistance" class="top-route-stat-value">—</span>
+                </div>
+                <div class="top-route-stat">
+                    <span class="top-route-stat-label">Duration</span>
+                    <span id="topRouteDuration" class="top-route-stat-value">—</span>
+                </div>
+            </div>
+            <div class="top-route-actions">
+                <button class="fab fab-icon fab-menu-btn" id="actionMenuBtn" title="Route actions" aria-label="Route actions">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 7h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M5 17h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                <div id="actionMenu" class="action-menu hidden" aria-hidden="true">
+                    <button class="action-menu-item" id="actionMenuCurrentLocation" type="button">Use current location</button>
+                    <button class="action-menu-item" id="actionMenuLiveWind" type="button">Live Wind</button>
+                    <button class="action-menu-item" id="actionMenuLiveTide" type="button">Live Tide</button>
+                    <button class="action-menu-item" id="actionMenuSaveRoute" type="button">Save Route</button>
+                    <button class="action-menu-item" id="actionMenuLoadRoute" type="button">Load Route</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="routeModeBadge" class="route-mode-badge hidden" aria-live="polite" aria-hidden="true">
+        <div class="route-mode-badge-title">Adding waypoints</div>
+        <div class="route-mode-badge-text">Tap the map to place the next point.</div>
+    </div>
+
+    <div id="mapInfoCard" class="map-info-card hidden right">
+        <button id="mapInfoClose" class="map-info-close" aria-label="Close info">×</button>
+        <div id="mapInfoContent"></div>
+    </div>
+
+    <div id="settingsBackdrop" class="settings-backdrop hidden" aria-hidden="true"></div>
+
+    <aside id="settingsDrawer" class="settings-drawer hidden" aria-hidden="true">
+        <button id="settingsDrawerHandle" class="settings-drawer-handle" aria-label="Open settings">
+            <span class="settings-drawer-handle-inner">
+                <span class="settings-drawer-handle-bar"></span>
+                <span class="settings-drawer-handle-label">Settings</span>
+            </span>
+        </button>
+        <div class="settings-drawer-header">
+            <div class="settings-drawer-title">Settings</div>
+            <button id="settingsDrawerClose" class="settings-drawer-close" aria-label="Close settings">×</button>
+        </div>
+        <div class="settings-drawer-content">
+    <div id="settingsPanel">
+                <div class="settings-card">
+                    <div class="settings-card-title">Route setup</div>
+
+                    <div class="form-grid form-grid-route-setup">
+                        <div class="form-field form-field-boat-speed">
+                            <label for="boatSpeed">Knots</label>
+                            <input id="boatSpeed" type="number" value="5" min="1" max="10" step="0.1">
+                        </div>
+
+                        <div class="form-field form-field-start-location">
+                            <label for="startLocation">Start location</label>
+                            <input id="startLocation" type="text" placeholder="Hartlepool">
+                        </div>
+
+                        <div class="form-field form-field-live-tide">
+                            <label for="liveTideSetupBtn">Live Tide</label>
+                            <button id="liveTideSetupBtn" type="button" class="ghost compact settings-inline-btn">Set up Live Tide</button>
+                            <div class="field-note">Uses Stormglass marine current data with your own API key.</div>
+                        </div>
+
+                        <div class="form-field form-field-destination">
+                            <label for="destination">Destination</label>
+                            <input id="destination" type="text" placeholder="Whitby">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <div class="settings-card-title">Default conditions</div>
+
+                    <div class="form-grid form-grid-defaults">
+                        <div class="form-field">
+                            <label for="defaultWindDir">Wind °</label>
+                            <input id="defaultWindDir" type="number" value="180" step="1">
+                        </div>
+
+                        <div class="form-field">
+                            <label for="defaultWindSpeed">Wind Kts</label>
+                            <input id="defaultWindSpeed" type="number" value="15" step="0.1">
+                        </div>
+
+                        <div class="form-field">
+                            <label for="defaultTideDir">Tide °</label>
+                            <input id="defaultTideDir" type="number" value="0" step="1">
+                        </div>
+
+                        <div class="form-field">
+                            <label for="defaultTideSpeed">Tide Kts</label>
+                            <input id="defaultTideSpeed" type="number" value="1" step="0.1">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <div class="settings-card-title">Long leg handling</div>
+
+                    <div class="settings-toggle-grid">
+                        <div class="toggle-card">
+                            <label class="toggle-label" for="autoSplitLegs">
+                                <input id="autoSplitLegs" type="checkbox" checked>
+                                <span>Auto-add hourly waypoints</span>
+                            </label>
+                            <div class="toggle-note">
+                                Splits any leg longer than 1 hour into 1-hour chunks and shows inserted points on the map.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="liveTideKeyCard" class="settings-card live-tide-key-card hidden">
+                    <div class="settings-card-title">Live Tide</div>
+                    <div class="toggle-note">
+                        Live Tide uses Stormglass marine current data for tidal set and rate. Save your Stormglass API key here if you want to use Live Tide. If you leave it blank, the app will keep using your manual tide values.
+                    </div>
+
+                    <div class="form-grid live-tide-key-grid">
+                        <div class="form-field live-tide-key-field">
+                            <label for="stormglassApiKey">Stormglass API Key</label>
+                            <input id="stormglassApiKey" type="text" placeholder="Paste your API key">
+                        </div>
+                    </div>
+
+                    <div class="live-tide-key-actions">
+                        <button id="saveStormglassKeyBtn" type="button" class="ghost compact accent-ghost">Save Key</button>
+                        <button id="clearStormglassKeyBtn" type="button" class="ghost compact">Clear Key</button>
+                    </div>
+
+                    <div class="small-note" id="liveTideKeyStatus">
+                        No Stormglass API key saved.
+                    </div>
+                </div>
+
+                <div class="legend-strip">
+                    <div class="legend-item">
+                        <span class="legend-dot real-dot"></span>
+                        <span>Waypoint</span>
+                    </div>
+
+                    <div class="legend-item">
+                        <span class="legend-pill">1a</span>
+                        <span>Split leg marker</span>
+                    </div>
+                </div>
+
+                <div class="small-note">
+                    Tap the map to add waypoints only when waypoint adding is on.
+                </div>
+
+                <div class="small-note">
+                    Tap a waypoint to select it. Use Delete Waypoint to remove it on iPhone or desktop.
+                </div>
+
+                <div class="small-note">
+                    
+                </div>
+
+                <div class="small-note" id="liveWindStatus">
+                    
+                </div>
+
+                <div class="small-note" id="liveTideStatus">
+                    
+                </div>
+
+                <div class="small-note" id="offlineStatus">
+                    
+                </div>
+            </div>
+
+        </div>
+    </aside>
+
+    
+
+<div id="drawer">
+        <div id="drawerHandle"><span class="drawer-handle-bar"></span><span class="drawer-handle-label">Route</span></div>
+
+        
+<div id="summaryStrip">
+    <div class="summary-chip summary-chip-edit summary-chip-button">
+        <button class="ghost compact accent-ghost summary-action-btn" id="routeEditToggleBtn">Add Waypoints</button>
+    </div>
+
+    <div class="summary-chip summary-chip-delete summary-chip-button">
+        <button class="ghost compact summary-action-btn" id="deleteWaypointBtn">Delete Waypoint</button>
+    </div>
+
+    <div class="summary-chip summary-chip-meta">
+        <div class="summary-chip-label" id="routeWorkspaceLabel">Ready to plot</div>
+        <div class="summary-chip-note" id="routeWorkspaceNote">Turn on Add Waypoints, then tap the map to place the first point.</div>
+        <div class="summary-chip-meta-store" aria-hidden="true">
+            <span id="summaryDistance">—</span>
+            <span id="summaryDuration">—</span>
+        </div>
+    </div>
+</div>
+
+<div id="drawerContent">
+            <div id="routePanel" class="drawer-panel active route-panel-only">
+                <div id="routePreviewCard" class="route-preview-card route-preview-card-compact">
+                    <div id="routePreviewContent"></div>
+                </div>
+
+                <div class="leg-rail-section">
+                    <div class="leg-rail-header">
+                        <div class="leg-rail-title">Leg strip</div>
+                        <div class="leg-rail-subtitle">Swipe sideways to move through the route.</div>
+                    </div>
+                    <div id="legRailTrack" class="leg-rail-track"></div>
+                </div>
+
+                <div id="selectedLegCard" class="selected-leg-card selected-leg-card-empty">
+                    <div id="selectedLegCardContent"></div>
+                </div>
+
+                <details class="weather-widget-card" data-online-only>
+                    <summary class="weather-widget-summary">
+                        <span>Hartlepool weather</span>
+                        <span class="weather-widget-hint">Windfinder forecast</span>
+                    </summary>
+                    <div class="weather-widget-offline">Hartlepool weather is online only.</div>
+                    <div class="weather-widget-body">
+                        <script src="https://www.windfinder.com/widget/forecast/js/hartlepool?unit_wave=m&unit_rain=mm&unit_temperature=c&unit_wind=kts&unit_pressure=hPa&days=2&show_day=0"></script>
+                        <noscript><a rel="nofollow" href="https://www.windfinder.com/forecast/hartlepool?utm_source=forecast&utm_medium=web&utm_campaign=homepageweather&utm_content=noscript-Hartlepool">Wind forecast for Hartlepool</a> provided by <a rel="nofollow" href="https://www.windfinder.com?utm_source=forecast&utm_medium=web&utm_campaign=homepageweather&utm_content=noscript-logo">windfinder.com</a></noscript>
+                    </div>
+                </details>
+
+                <div class="route-panel-shell">
+                    <div class="route-panel-header">
+                        <div class="route-panel-title">Route legs</div>
+
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="route-table">
+                            <thead>
+                                <tr>
+                                    <th>Leg</th>
+                                    <th>Track</th>
+                                    <th>CTS</th>
+                                    <th>NM</th>
+                                    <th>Wind</th>
+                                    <th>Tide</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="legsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div id="savedRoutesBackdrop" class="saved-routes-backdrop hidden" aria-hidden="true"></div>
+    <div id="savedRoutesModal" class="saved-routes-modal hidden" aria-hidden="true">
+        <div class="saved-routes-header">
+            <div class="saved-routes-title">Saved Routes</div>
+            <button id="savedRoutesClose" class="saved-routes-close" aria-label="Close saved routes">×</button>
+        </div>
+        <div id="savedRoutesList" class="saved-routes-list"></div>
+    </div>
+
+
+    <div id="legEditorBackdrop" class="leg-editor-backdrop hidden" aria-hidden="true"></div>
+    <div id="legEditorSheet" class="leg-editor-sheet hidden" aria-hidden="true">
+        <div class="leg-editor-sheet-header">
+            <div>
+                <div id="legEditorKicker" class="leg-editor-kicker">Edit local conditions</div>
+                <div id="legEditorTitle" class="leg-editor-title">Leg editor</div>
+                <div id="legEditorSubtitle" class="leg-editor-subtitle">Adjust local wind and tide for this leg.</div>
+            </div>
+            <button id="legEditorClose" class="leg-editor-close" aria-label="Close editor">×</button>
+        </div>
+        <div id="legEditorBody" class="leg-editor-body"></div>
+        <div class="leg-editor-actions">
+            <button id="legEditorCancel" type="button" class="ghost compact">Cancel</button>
+            <button id="legEditorApply" type="button" class="ghost compact accent-ghost">Apply changes</button>
+        </div>
+    </div>
+
+    <div id="toastMessage" class="toast-message hidden" aria-live="polite"></div>
+
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
