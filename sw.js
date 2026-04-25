@@ -1,6 +1,7 @@
-const APP_CACHE = 'sailing-planner-app-v26';
-const TILE_CACHE = 'sailing-planner-tiles-v26';
-const RUNTIME_CACHE = 'sailing-planner-runtime-v26';
+const APP_VERSION = 'v30';
+const APP_CACHE = `sailing-planner-app-${APP_VERSION}`;
+const TILE_CACHE = `sailing-planner-tiles-${APP_VERSION}`;
+const RUNTIME_CACHE = `sailing-planner-runtime-${APP_VERSION}`;
 
 const APP_ASSETS = [
     './',
@@ -33,6 +34,15 @@ self.addEventListener('activate', (event) => {
         ))
     );
     self.clients.claim();
+});
+
+
+self.addEventListener('message', (event) => {
+    if (!event.data || typeof event.data !== 'object') return;
+
+    if (event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 self.addEventListener('fetch', (event) => {

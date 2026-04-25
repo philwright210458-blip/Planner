@@ -2846,3 +2846,103 @@ body.offline-mode .weather-widget-body {
     }
 }
 
+
+
+/* v30 popup-based leg editor */
+.map-info-card.editing {
+    width: min(360px, calc(100vw - 40px));
+    max-height: min(72vh, 560px);
+}
+
+.map-info-card.editing #mapInfoContent {
+    padding-right: 16px;
+}
+
+.wind-popup-editor {
+    min-width: 0;
+}
+
+.popup-editor-header {
+    margin-bottom: 10px;
+}
+
+.popup-editor-subtitle {
+    margin-top: 4px;
+    color: var(--text-soft);
+    font-size: 11px;
+    line-height: 1.35;
+    font-weight: 700;
+}
+
+.popup-editor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.popup-editor-group {
+    border: 1px solid rgba(219,228,235,0.95);
+    border-radius: 16px;
+    background: rgba(248,251,253,0.96);
+    padding: 10px;
+}
+
+.popup-editor-group-title {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.55px;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    margin-bottom: 8px;
+}
+
+.popup-editor-field {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-soft);
+    font-weight: 800;
+    margin-top: 7px;
+}
+
+.popup-editor-field input {
+    width: 100%;
+    min-height: 36px;
+    box-sizing: border-box;
+    border: 1px solid rgba(206,218,228,0.95);
+    border-radius: 12px;
+    padding: 7px 9px;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-main);
+    background: rgba(255,255,255,0.98);
+}
+
+.popup-editor-actions {
+    margin-top: 12px;
+}
+
+@media (max-width: 767px) {
+    .map-info-card.editing {
+        right: 16px;
+        width: calc(100vw - 32px);
+        max-width: calc(100vw - 32px);
+        max-height: min(72vh, 560px);
+    }
+
+    .popup-editor-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .popup-editor-group {
+        padding: 9px 10px;
+    }
+
+    .popup-editor-field {
+        grid-template-columns: 54px minmax(0, 1fr);
+    }
+}

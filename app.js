@@ -293,9 +293,48 @@ function updateOnlineStatus() {
 
 function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
+
+    let refreshing = false;
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+    });
+
     window.addEventListener('load', async () => {
         try {
-            await navigator.serviceWorker.register('./sw.js');
+            const registration = await navigator.serviceWorker.register('./sw.js');
+
+            const promptWorkerToActivate = (worker) => {
+                if (!worker) return;
+                worker.postMessage({ type: 'SKIP_WAITING' });
+            };
+
+            if (registration.waiting) {
+                promptWorkerToActivate(registration.waiting);
+            }
+
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                if (!newWorker) return;
+
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        promptWorkerToActivate(newWorker);
+                    }
+                });
+            });
+
+            window.setTimeout(() => {
+                registration.update().catch(() => {});
+            }, 3000);
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    registration.update().catch(() => {});
+                }
+            });
         } catch (err) {
             console.warn('Service worker registration failed:', err);
         }
@@ -809,6 +848,7 @@ function setInfoCardSideFromLatLng() {
 function showMapInfo(latlng, html) {
     if (!mapInfoCard || !mapInfoContent) return;
     setInfoCardSideFromLatLng(latlng);
+    mapInfoCard.classList.toggle('editing', typeof html === 'string' && html.includes('wind-popup-editor'));
     mapInfoContent.innerHTML = html;
     mapInfoCard.classList.add('hidden');
     void mapInfoCard.offsetWidth;
@@ -817,6 +857,7 @@ function showMapInfo(latlng, html) {
 
 function hideMapInfo() {
     if (!mapInfoCard) return;
+    mapInfoCard.classList.remove('editing');
     mapInfoCard.classList.add('hidden');
 }
 
@@ -868,14 +909,112 @@ function showQuickLegPopupForLeg(legIndex, latlng = null) {
     showMapInfo(popupLatLng, buildFamilyInfoHtml(leg.sourceSegmentIndex));
 }
 
+function getPopupLatLngForSource(sourceSegmentIndex) {
+    if (selectedWaypointIndex >= 0 && waypoints[selectedWaypointIndex]) {
+        return waypoints[selectedWaypointIndex].getLatLng();
+    }
+
+    const firstLegIndex = getFirstLegIndexForSource(sourceSegmentIndex);
+    const leg = firstLegIndex >= 0 ? currentLegData[firstLegIndex] : null;
+    if (leg) return interpolateLatLng(leg.start, leg.end, 0.5);
+    if (waypoints[sourceSegmentIndex]) return waypoints[sourceSegmentIndex].getLatLng();
+    return map.getCenter();
+}
+
+function buildPopupConditionEditorHtml(sourceSegmentIndex) {
+    const firstLegIndex = getFirstLegIndexForSource(sourceSegmentIndex);
+    const leg = firstLegIndex >= 0 ? currentLegData[firstLegIndex] : null;
+    if (!leg) return '<div class="wind-popup wind-popup-editor"><strong>Leg conditions</strong></div>';
+
+    const warningsHtml = renderWarningsHtml(getFamilyWarnings(sourceSegmentIndex));
+    const windSpeedText = Number(leg.windSpeed).toFixed(leg.windSpeed % 1 ? 1 : 0);
+    const tideSpeedText = Number(leg.tideSpeed).toFixed(leg.tideSpeed % 1 ? 1 : 0);
+    const canDeleteWaypoint = selectedWaypointIndex >= 0;
+
+    return `
+        <div class="wind-popup wind-popup-editor" onclick="event.stopPropagation()">
+            <div class="popup-editor-header">
+                <strong>Leg ${escapeHtml(leg.label)} conditions</strong>
+                <div class="popup-editor-subtitle">CTS ${Math.round(leg.cts)}° • ${leg.distance.toFixed(2)} NM • ${leg.status}</div>
+            </div>
+            ${warningsHtml}
+            <div class="popup-editor-grid">
+                <div class="popup-editor-group">
+                    <div class="popup-editor-group-title">Wind</div>
+                    <label class="popup-editor-field" for="popupWindDir">
+                        <span>Dir</span>
+                        <input id="popupWindDir" type="number" inputmode="numeric" step="1" value="${Math.round(leg.windDir)}">
+                    </label>
+                    <label class="popup-editor-field" for="popupWindSpeed">
+                        <span>Speed</span>
+                        <input id="popupWindSpeed" type="number" inputmode="decimal" step="0.1" value="${windSpeedText}">
+                    </label>
+                </div>
+                <div class="popup-editor-group">
+                    <div class="popup-editor-group-title">Tide</div>
+                    <label class="popup-editor-field" for="popupTideDir">
+                        <span>Dir</span>
+                        <input id="popupTideDir" type="number" inputmode="numeric" step="1" value="${Math.round(leg.tideDir)}">
+                    </label>
+                    <label class="popup-editor-field" for="popupTideSpeed">
+                        <span>Speed</span>
+                        <input id="popupTideSpeed" type="number" inputmode="decimal" step="0.1" value="${tideSpeedText}">
+                    </label>
+                </div>
+            </div>
+            <div class="wind-popup-actions popup-editor-actions">
+                <button type="button" class="wind-popup-action-btn primary" onclick="applyPopupConditionChanges(${sourceSegmentIndex}); event.stopPropagation();">Apply</button>
+                <button type="button" class="wind-popup-action-btn" onclick="closePopupConditionEditor(${sourceSegmentIndex}); event.stopPropagation();">Done</button>
+                ${canDeleteWaypoint ? '<button type="button" class="wind-popup-action-btn" onclick="deleteWaypointFromPopup(event)">Delete</button>' : ''}
+            </div>
+        </div>
+    `;
+}
 
 function openLegConditionEditorFromPopup(sourceSegmentIndex) {
-    hideMapInfo();
     closeActionMenu();
     closeSettingsDrawer();
     const targetLegIndex = getFirstLegIndexForSource(sourceSegmentIndex);
     if (targetLegIndex < 0) return;
-    openConditionEditor('wind', currentLegData[targetLegIndex]?.key, targetLegIndex);
+
+    selectedLegIndex = targetLegIndex;
+    setActiveConditionEditor('wind', currentLegData[targetLegIndex]?.key);
+    expandedFamilySource = familyHasChildren(sourceSegmentIndex) ? sourceSegmentIndex : expandedFamilySource;
+    updateRoute();
+
+    const popupLatLng = getPopupLatLngForSource(sourceSegmentIndex);
+    showMapInfo(popupLatLng, buildPopupConditionEditorHtml(sourceSegmentIndex));
+
+    requestAnimationFrame(() => {
+        const input = document.getElementById('popupWindDir');
+        if (input) {
+            input.focus();
+            input.select();
+        }
+    });
+}
+
+function applyPopupConditionChanges(sourceSegmentIndex) {
+    const firstLegIndex = getFirstLegIndexForSource(sourceSegmentIndex);
+    const leg = firstLegIndex >= 0 ? currentLegData[firstLegIndex] : null;
+    if (!leg) return;
+
+    setLegConditionValue('wind', leg.key, 'dir', document.getElementById('popupWindDir')?.value);
+    setLegConditionValue('wind', leg.key, 'speed', document.getElementById('popupWindSpeed')?.value);
+    setLegConditionValue('tide', leg.key, 'dir', document.getElementById('popupTideDir')?.value);
+    setLegConditionValue('tide', leg.key, 'speed', document.getElementById('popupTideSpeed')?.value);
+
+    selectedLegIndex = firstLegIndex;
+    updateRoute();
+
+    const popupLatLng = getPopupLatLngForSource(sourceSegmentIndex);
+    showMapInfo(popupLatLng, buildPopupConditionEditorHtml(sourceSegmentIndex));
+}
+
+function closePopupConditionEditor(sourceSegmentIndex) {
+    clearActiveConditionEditor();
+    const popupLatLng = getPopupLatLngForSource(sourceSegmentIndex);
+    showMapInfo(popupLatLng, buildFamilyInfoHtml(sourceSegmentIndex) + getWaypointWarningHtml(selectedWaypointIndex));
 }
 
 function openRouteEditorFromPopup(sourceSegmentIndex) {
@@ -1010,10 +1149,15 @@ function applyLegEditorChanges() {
         ? waypoints[selectedWaypointIndex].getLatLng()
         : leg.start;
 
-    setLegConditionValue('wind', leg.key, 'dir', document.getElementById('editorWindDir')?.value);
-    setLegConditionValue('wind', leg.key, 'speed', document.getElementById('editorWindSpeed')?.value);
-    setLegConditionValue('tide', leg.key, 'dir', document.getElementById('editorTideDir')?.value);
-    setLegConditionValue('tide', leg.key, 'speed', document.getElementById('editorTideSpeed')?.value);
+    const windDirInput = document.getElementById('editorWindDir') || document.getElementById('popupWindDir');
+    const windSpeedInput = document.getElementById('editorWindSpeed') || document.getElementById('popupWindSpeed');
+    const tideDirInput = document.getElementById('editorTideDir') || document.getElementById('popupTideDir');
+    const tideSpeedInput = document.getElementById('editorTideSpeed') || document.getElementById('popupTideSpeed');
+
+    setLegConditionValue('wind', leg.key, 'dir', windDirInput?.value);
+    setLegConditionValue('wind', leg.key, 'speed', windSpeedInput?.value);
+    setLegConditionValue('tide', leg.key, 'dir', tideDirInput?.value);
+    setLegConditionValue('tide', leg.key, 'speed', tideSpeedInput?.value);
 
     if (isCompactEditorMode()) closeLegEditorSheet();
     clearActiveConditionEditor();
@@ -1144,31 +1288,29 @@ function deleteSelectedWaypoint() {
 }
 
 function openConditionEditor(kind, key, legIndex) {
+    const leg = getLegByIndex(legIndex);
+    if (!leg) return;
+
     selectedLegIndex = legIndex;
     selectedWaypointIndex = -1;
     setActiveConditionEditor(kind, key);
-    expandedFamilySource = familyHasChildren(currentLegData[legIndex]?.sourceSegmentIndex)
-        ? currentLegData[legIndex]?.sourceSegmentIndex
+    expandedFamilySource = familyHasChildren(leg.sourceSegmentIndex)
+        ? leg.sourceSegmentIndex
         : expandedFamilySource;
-    if (drawer) {
-        const currentHeight = parseFloat(getComputedStyle(drawer).height) || 0;
-        const targetHeight = Math.max(currentHeight, getSnapHeight('middle'));
-        setDrawerHeight(targetHeight, true);
-    }
+    closeLegEditorSheet();
     updateRoute();
-    if (isCompactEditorMode()) {
-        openLegEditorSheet();
-    } else {
-        requestAnimationFrame(() => {
-            selectedLegCard?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            const focusId = kind === 'tide' ? 'editorTideDir' : 'editorWindDir';
-            const input = document.getElementById(focusId);
-            if (input) {
-                input.focus();
-                input.select();
-            }
-        });
-    }
+
+    const popupLatLng = getPopupLatLngForSource(leg.sourceSegmentIndex);
+    showMapInfo(popupLatLng, buildPopupConditionEditorHtml(leg.sourceSegmentIndex));
+
+    requestAnimationFrame(() => {
+        const focusId = kind === 'tide' ? 'popupTideDir' : 'popupWindDir';
+        const input = document.getElementById(focusId);
+        if (input) {
+            input.focus();
+            input.select();
+        }
+    });
 }
 
 function clearArrowMarkers() {
@@ -1619,38 +1761,8 @@ function renderTopRouteHeader(totalDistance = null, totalHours = null) {
 
 function renderSelectedLegCard(totalDistance = null, totalHours = null) {
     if (!selectedLegCardContent || !selectedLegCard) return;
-
-    const leg = getActiveEditorLeg();
-    const showDesktopEditor = !isCompactEditorMode() && !!leg && !!activeConditionEditor.key;
-
-    if (!showDesktopEditor) {
-        selectedLegCard.style.display = 'none';
-        selectedLegCardContent.innerHTML = '';
-        return;
-    }
-
-    selectedLegCard.style.display = '';
-    selectedLegCard.classList.remove('selected-leg-card-empty');
-    const canExpandFamily = familyHasChildren(leg.sourceSegmentIndex);
-    const showFamilyButton = canExpandFamily && expandedFamilySource === leg.sourceSegmentIndex;
-    const warningsHtml = renderWarningsHtml(leg.warnings || []);
-
-    selectedLegCardContent.innerHTML = `
-        <div class="selected-leg-card-header selected-leg-card-header-editor">
-            <div>
-                <div class="selected-leg-card-kicker">Edit local conditions</div>
-                <div class="selected-leg-card-title">Leg ${escapeHtml(leg.label)} conditions</div>
-                <div class="selected-leg-card-subtitle">Waypoint ${leg.sourceSegmentIndex + 1} → Waypoint ${leg.sourceSegmentIndex + 2}</div>
-            </div>
-        </div>
-        ${warningsHtml}
-        ${renderLegEditorFields(leg)}
-        <div class="selected-leg-actions">
-            <button type="button" class="ghost compact selected-leg-action primary" onclick="applyLegEditorChanges()">Apply changes</button>
-            <button type="button" class="ghost compact selected-leg-action" onclick="closeConditionEditor()">Done</button>
-            ${showFamilyButton ? `<button type="button" class="ghost compact selected-leg-action" onclick="toggleSelectedLegFamilyFromCard()">Collapse Family</button>` : ''}
-        </div>
-    `;
+    selectedLegCard.style.display = 'none';
+    selectedLegCardContent.innerHTML = '';
 }
 
 function toggleSelectedLegFamilyFromCard() {
@@ -2196,6 +2308,8 @@ window.openConditionEditor = openConditionEditor;
 window.closeConditionEditor = closeConditionEditor;
 window.openRouteEditorFromPopup = openRouteEditorFromPopup;
 window.openLegConditionEditorFromPopup = openLegConditionEditorFromPopup;
+window.applyPopupConditionChanges = applyPopupConditionChanges;
+window.closePopupConditionEditor = closePopupConditionEditor;
 window.deleteWaypointFromPopup = deleteWaypointFromPopup;
 window.toggleSelectedLegFamilyFromCard = toggleSelectedLegFamilyFromCard;
 window.deleteSelectedWaypoint = deleteSelectedWaypoint;
