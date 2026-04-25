@@ -1568,7 +1568,7 @@ function renderWorkspaceSummary(totalDistance = null, totalHours = null) {
 
     if (waypoints.length < 2) {
         routeWorkspaceLabel.textContent = 'Ready to plot';
-        routeWorkspaceNote.textContent = 'Turn on Add Waypoints, then tap the map to place the first point.';
+        routeWorkspaceNote.textContent = '';
         return;
     }
 
@@ -1580,7 +1580,7 @@ function renderWorkspaceSummary(totalDistance = null, totalHours = null) {
     }
 
     routeWorkspaceLabel.textContent = 'Route ready';
-    routeWorkspaceNote.textContent = `${waypoints.length} waypoint${waypoints.length === 1 ? '' : 's'} plotted. Swipe the leg strip or tap a route line.`;
+    routeWorkspaceNote.textContent = `${waypoints.length} waypoint${waypoints.length === 1 ? '' : 's'} plotted.`;
 }
 
 function renderTopRouteHeader(totalDistance = null, totalHours = null) {
