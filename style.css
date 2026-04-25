@@ -2946,3 +2946,9 @@ body.offline-mode .weather-widget-body {
         grid-template-columns: 54px minmax(0, 1fr);
     }
 }
+
+
+/* v31: route legs table removed from bottom drawer */
+.route-panel-shell {
+    display: none !important;
+}

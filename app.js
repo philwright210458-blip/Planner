@@ -921,9 +921,23 @@ function getPopupLatLngForSource(sourceSegmentIndex) {
     return map.getCenter();
 }
 
-function buildPopupConditionEditorHtml(sourceSegmentIndex) {
-    const firstLegIndex = getFirstLegIndexForSource(sourceSegmentIndex);
-    const leg = firstLegIndex >= 0 ? currentLegData[firstLegIndex] : null;
+function getEditableLegIndexForSource(sourceSegmentIndex, preferredLegIndex = null) {
+    if (Number.isFinite(preferredLegIndex) && currentLegData[preferredLegIndex]?.sourceSegmentIndex === sourceSegmentIndex) {
+        return preferredLegIndex;
+    }
+    if (selectedLegIndex >= 0 && currentLegData[selectedLegIndex]?.sourceSegmentIndex === sourceSegmentIndex) {
+        return selectedLegIndex;
+    }
+    if (activeConditionEditor.key) {
+        const activeIndex = currentLegData.findIndex(leg => leg.key === activeConditionEditor.key && leg.sourceSegmentIndex === sourceSegmentIndex);
+        if (activeIndex >= 0) return activeIndex;
+    }
+    return getFirstLegIndexForSource(sourceSegmentIndex);
+}
+
+function buildPopupConditionEditorHtml(sourceSegmentIndex, preferredLegIndex = null) {
+    const editLegIndex = getEditableLegIndexForSource(sourceSegmentIndex, preferredLegIndex);
+    const leg = editLegIndex >= 0 ? currentLegData[editLegIndex] : null;
     if (!leg) return '<div class="wind-popup wind-popup-editor"><strong>Leg conditions</strong></div>';
 
     const warningsHtml = renderWarningsHtml(getFamilyWarnings(sourceSegmentIndex));
@@ -974,7 +988,7 @@ function buildPopupConditionEditorHtml(sourceSegmentIndex) {
 function openLegConditionEditorFromPopup(sourceSegmentIndex) {
     closeActionMenu();
     closeSettingsDrawer();
-    const targetLegIndex = getFirstLegIndexForSource(sourceSegmentIndex);
+    const targetLegIndex = getEditableLegIndexForSource(sourceSegmentIndex);
     if (targetLegIndex < 0) return;
 
     selectedLegIndex = targetLegIndex;
@@ -983,7 +997,7 @@ function openLegConditionEditorFromPopup(sourceSegmentIndex) {
     updateRoute();
 
     const popupLatLng = getPopupLatLngForSource(sourceSegmentIndex);
-    showMapInfo(popupLatLng, buildPopupConditionEditorHtml(sourceSegmentIndex));
+    showMapInfo(popupLatLng, buildPopupConditionEditorHtml(sourceSegmentIndex, targetLegIndex));
 
     requestAnimationFrame(() => {
         const input = document.getElementById('popupWindDir');
@@ -995,8 +1009,8 @@ function openLegConditionEditorFromPopup(sourceSegmentIndex) {
 }
 
 function applyPopupConditionChanges(sourceSegmentIndex) {
-    const firstLegIndex = getFirstLegIndexForSource(sourceSegmentIndex);
-    const leg = firstLegIndex >= 0 ? currentLegData[firstLegIndex] : null;
+    const editLegIndex = getEditableLegIndexForSource(sourceSegmentIndex);
+    const leg = editLegIndex >= 0 ? currentLegData[editLegIndex] : null;
     if (!leg) return;
 
     setLegConditionValue('wind', leg.key, 'dir', document.getElementById('popupWindDir')?.value);
@@ -1004,11 +1018,12 @@ function applyPopupConditionChanges(sourceSegmentIndex) {
     setLegConditionValue('tide', leg.key, 'dir', document.getElementById('popupTideDir')?.value);
     setLegConditionValue('tide', leg.key, 'speed', document.getElementById('popupTideSpeed')?.value);
 
-    selectedLegIndex = firstLegIndex;
+    selectedLegIndex = editLegIndex;
+    setActiveConditionEditor('wind', leg.key);
     updateRoute();
 
     const popupLatLng = getPopupLatLngForSource(sourceSegmentIndex);
-    showMapInfo(popupLatLng, buildPopupConditionEditorHtml(sourceSegmentIndex));
+    showMapInfo(popupLatLng, buildPopupConditionEditorHtml(sourceSegmentIndex, editLegIndex));
 }
 
 function closePopupConditionEditor(sourceSegmentIndex) {
@@ -1300,8 +1315,8 @@ function openConditionEditor(kind, key, legIndex) {
     closeLegEditorSheet();
     updateRoute();
 
-    const popupLatLng = getPopupLatLngForSource(leg.sourceSegmentIndex);
-    showMapInfo(popupLatLng, buildPopupConditionEditorHtml(leg.sourceSegmentIndex));
+    const popupLatLng = interpolateLatLng(leg.start, leg.end, 0.5);
+    showMapInfo(popupLatLng, buildPopupConditionEditorHtml(leg.sourceSegmentIndex, legIndex));
 
     requestAnimationFrame(() => {
         const focusId = kind === 'tide' ? 'popupTideDir' : 'popupWindDir';
@@ -1794,7 +1809,9 @@ function renderLegRail() {
         el.addEventListener('click', () => {
             const index = Number(el.dataset.legRailIndex);
             if (!Number.isFinite(index)) return;
-            selectLeg(index);
+            const leg = currentLegData[index];
+            if (!leg) return;
+            openConditionEditor('wind', leg.key, index);
         });
     });
 
