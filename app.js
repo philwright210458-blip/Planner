@@ -985,6 +985,31 @@ function buildPopupConditionEditorHtml(sourceSegmentIndex, preferredLegIndex = n
     `;
 }
 
+
+function openLegConditionEditorForLeg(legIndex) {
+    const leg = currentLegData[legIndex];
+    if (!leg) return;
+
+    closeActionMenu();
+    closeSettingsDrawer();
+    selectedLegIndex = legIndex;
+    selectedWaypointIndex = -1;
+    expandedFamilySource = familyHasChildren(leg.sourceSegmentIndex) ? leg.sourceSegmentIndex : expandedFamilySource;
+    setActiveConditionEditor('wind', leg.key);
+    updateRoute();
+
+    const popupLatLng = interpolateLatLng(leg.start, leg.end, 0.5);
+    showMapInfo(popupLatLng, buildPopupConditionEditorHtml(leg.sourceSegmentIndex, legIndex));
+
+    requestAnimationFrame(() => {
+        const input = document.getElementById('popupWindDir');
+        if (input) {
+            input.focus();
+            input.select();
+        }
+    });
+}
+
 function openLegConditionEditorFromPopup(sourceSegmentIndex) {
     closeActionMenu();
     closeSettingsDrawer();
@@ -1785,6 +1810,27 @@ function toggleSelectedLegFamilyFromCard() {
     toggleFamilyExpansion(currentLegData[selectedLegIndex].sourceSegmentIndex);
 }
 
+
+function activateLegFromRail(legIndex) {
+    if (!Number.isFinite(legIndex) || legIndex < 0 || legIndex >= currentLegData.length) return;
+
+    selectLeg(legIndex);
+    const leg = currentLegData[legIndex];
+    if (!leg) return;
+
+    setActiveConditionEditor('wind', leg.key);
+    const popupLatLng = interpolateLatLng(leg.start, leg.end, 0.5);
+    showMapInfo(popupLatLng, buildPopupConditionEditorHtml(leg.sourceSegmentIndex, legIndex));
+
+    requestAnimationFrame(() => {
+        const input = document.getElementById('popupWindDir');
+        if (input) {
+            input.focus();
+            input.select();
+        }
+    });
+}
+
 function renderLegRail() {
     const track = document.getElementById('legRailTrack');
     if (!track) return;
@@ -1806,12 +1852,12 @@ function renderLegRail() {
     `).join('');
 
     track.querySelectorAll('[data-leg-rail-index]').forEach((el) => {
-        el.addEventListener('click', () => {
+        el.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
             const index = Number(el.dataset.legRailIndex);
             if (!Number.isFinite(index)) return;
-            const leg = currentLegData[index];
-            if (!leg) return;
-            openConditionEditor('wind', leg.key, index);
+            activateLegFromRail(index);
         });
     });
 
@@ -2269,8 +2315,13 @@ function updateRoute() {
         if (activeSource >= 0 && activeLeg && mapInfoCard && !mapInfoCard.classList.contains('hidden')) {
             const popupLatLng = selectedWaypointIndex >= 0 && waypoints[selectedWaypointIndex]
                 ? waypoints[selectedWaypointIndex].getLatLng()
-                : activeLeg.start;
-            showMapInfo(popupLatLng, buildFamilyInfoHtml(activeSource) + getWaypointWarningHtml(selectedWaypointIndex));
+                : interpolateLatLng(activeLeg.start, activeLeg.end, 0.5);
+
+            const popupHtml = activeConditionEditor.key && activeConditionEditor.key === activeLeg.key
+                ? buildPopupConditionEditorHtml(activeSource, selectedLegIndex)
+                : buildFamilyInfoHtml(activeSource) + getWaypointWarningHtml(selectedWaypointIndex);
+
+            showMapInfo(popupLatLng, popupHtml);
         }
     } else {
         hideMapInfo();

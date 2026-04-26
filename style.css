@@ -2952,3 +2952,143 @@ body.offline-mode .weather-widget-body {
 .route-panel-shell {
     display: none !important;
 }
+
+
+/* v38 safe cleanup + visual polish */
+:root {
+    --selected: #ff7b00;
+    --selected-soft: rgba(255, 123, 0, 0.12);
+    --selected-line: rgba(255, 123, 0, 0.52);
+    --accent-glow: rgba(77, 133, 184, 0.14);
+}
+
+/* Keep the drawer focused on actions + route legs. Header already carries route totals. */
+#routePreviewCard {
+    display: none !important;
+}
+
+.top-route-bar {
+    border-color: rgba(77, 133, 184, 0.16);
+    box-shadow: 0 12px 26px rgba(25,42,60,0.11), 0 0 0 1px rgba(255,255,255,0.55) inset;
+}
+
+.top-route-kicker,
+.leg-rail-title,
+.route-panel-title,
+.settings-card-title {
+    color: #607d92;
+}
+
+.top-route-stat {
+    border-color: rgba(125, 167, 202, 0.30);
+    background: linear-gradient(180deg, rgba(248,251,253,0.98), rgba(239,246,251,0.95));
+}
+
+.top-route-stat-label {
+    color: #8da0ae;
+}
+
+.summary-chip-edit .summary-action-btn {
+    background: linear-gradient(135deg, #5f96c8, #377eb8);
+    color: #ffffff;
+    box-shadow: 0 8px 18px rgba(49,119,173,0.18);
+}
+
+body.route-editing .summary-chip-edit .summary-action-btn {
+    background: linear-gradient(135deg, #ff9639, #ff7b00);
+    color: #ffffff;
+    box-shadow: 0 8px 18px rgba(255,123,0,0.20);
+}
+
+.summary-chip-delete .summary-action-btn:not(:disabled) {
+    color: #243645;
+    background: rgba(237,244,249,0.96);
+}
+
+.leg-rail-card {
+    border-color: rgba(203, 219, 231, 0.96);
+    background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,251,253,0.94));
+}
+
+.leg-rail-card.selected {
+    border-color: var(--selected-line);
+    background: linear-gradient(180deg, rgba(255,250,244,0.98), rgba(255,244,232,0.96));
+    box-shadow: 0 10px 22px rgba(255,123,0,0.10), 0 0 0 1px rgba(255,123,0,0.08) inset;
+}
+
+.leg-rail-card.selected .leg-rail-card-label,
+.leg-rail-card.selected .leg-rail-card-cts {
+    color: #173247;
+}
+
+.status-reaching {
+    background: #e9f4fb;
+    color: #47789d;
+}
+
+.status-tacking {
+    background: #fff0dd;
+    color: #b56312;
+}
+
+.status-running {
+    background: #e9f7ee;
+    color: #3f7d4f;
+}
+
+.map-info-card {
+    border-color: var(--selected-line) !important;
+    box-shadow: 0 12px 26px rgba(25,42,60,0.12), 0 0 0 3px rgba(255,123,0,0.06) !important;
+}
+
+.map-info-card.editing {
+    border-color: var(--selected) !important;
+    box-shadow: 0 16px 34px rgba(25,42,60,0.14), 0 0 0 4px rgba(255,123,0,0.08) !important;
+}
+
+.wind-popup-action-btn.primary,
+.popup-editor-apply {
+    background: linear-gradient(135deg, #5f96c8, #377eb8);
+    color: #ffffff;
+}
+
+.popup-editor-group {
+    border-color: rgba(203, 219, 231, 0.95);
+}
+
+.popup-editor-group:first-of-type {
+    border-color: rgba(77, 133, 184, 0.26);
+}
+
+.popup-editor-group:nth-of-type(2) {
+    border-color: rgba(255, 123, 0, 0.26);
+}
+
+.settings-drawer.hidden {
+    transform: translateX(-100%) !important;
+}
+
+.settings-drawer.hidden .settings-drawer-header,
+.settings-drawer.hidden .settings-drawer-content {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.settings-drawer.hidden .settings-drawer-handle {
+    box-shadow: 10px 0 22px rgba(25,42,60,0.08);
+}
+
+@media (max-width: 767px) {
+    .top-route-bar {
+        border-radius: 24px;
+    }
+
+    .leg-rail-card.selected {
+        box-shadow: 0 8px 18px rgba(255,123,0,0.12);
+    }
+
+    .map-info-card {
+        right: 16px !important;
+        max-width: calc(100vw - 32px) !important;
+    }
+}
