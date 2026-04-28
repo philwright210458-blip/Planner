@@ -1357,21 +1357,32 @@ tbody tr:last-child td:last-child {
     grid-row: 1;
 }
 
-.form-grid-route-setup .form-field-start-time {
-    grid-column: 1;
-    grid-row: 2;
-}
-
 .form-grid-route-setup .form-field-start-location {
     grid-column: 2;
     grid-row: 1;
 }
 
-.form-grid-route-setup .form-field-destination {
+.form-grid-route-setup .form-field-departure-date {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.form-grid-route-setup .form-field-departure-time {
     grid-column: 2;
     grid-row: 2;
 }
 
+.form-grid-route-setup .form-field-live-tide {
+    grid-column: 1;
+    grid-row: 3;
+}
+
+.form-grid-route-setup .form-field-destination {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+input[type="date"],
 input[type="time"] {
     width: 100%;
     min-width: 0;
@@ -1389,19 +1400,29 @@ input[type="time"] {
         grid-row: 1;
     }
 
-    .form-grid-route-setup .form-field-start-time {
-        grid-column: 1;
-        grid-row: 2;
-    }
-
     .form-grid-route-setup .form-field-start-location {
         grid-column: 2;
         grid-row: 1;
     }
 
-    .form-grid-route-setup .form-field-destination {
+    .form-grid-route-setup .form-field-departure-date {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .form-grid-route-setup .form-field-departure-time {
         grid-column: 2;
         grid-row: 2;
+    }
+
+    .form-grid-route-setup .form-field-live-tide {
+        grid-column: 1;
+        grid-row: 3;
+    }
+
+    .form-grid-route-setup .form-field-destination {
+        grid-column: 2;
+        grid-row: 3;
     }
 }
 
