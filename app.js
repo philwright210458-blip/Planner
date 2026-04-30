@@ -348,16 +348,26 @@ function initLaunchSplash() {
         return;
     }
 
+    const continueBtn = document.getElementById('splashContinueBtn');
+
+    // Animate the logo in
     setTimeout(() => {
         launchSplash.classList.add('animate');
-    }, 1200);
+    }, 400);
 
+    // Show the Continue button after animation settles
     setTimeout(() => {
-        dismissLaunchSplash();
-    }, 2600);
+        if (continueBtn) continueBtn.classList.add('visible');
+    }, 1400);
 
-    launchSplash.addEventListener('click', dismissLaunchSplash);
-    launchSplash.addEventListener('touchstart', dismissLaunchSplash, { passive: true });
+    if (continueBtn) {
+        continueBtn.addEventListener('click', dismissLaunchSplash);
+    }
+    // Fallback: tapping anywhere on the splash also dismisses it
+    launchSplash.addEventListener('touchstart', (e) => {
+        if (e.target === continueBtn) return;
+        if (continueBtn && !continueBtn.classList.contains('visible')) dismissLaunchSplash();
+    }, { passive: true });
 }
 
 function getSnapHeight(name) {
@@ -800,6 +810,14 @@ function applyRouteSnapshot(routeSnapshot) {
         waypoints.push(marker);
     });
 
+    // Fit the map to the loaded route
+    if (waypoints.length >= 2) {
+        const bounds = L.latLngBounds(waypoints.map(m => m.getLatLng()));
+        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 13, animate: true });
+    } else if (waypoints.length === 1) {
+        map.setView(waypoints[0].getLatLng(), 12, { animate: true });
+    }
+
     updateRoute();
 }
 
@@ -894,10 +912,31 @@ function toggleActionMenu() {
 }
 
 function useLocation() {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition((pos) => {
-        map.setView([pos.coords.latitude, pos.coords.longitude], 12);
-    });
+    if (!navigator.geolocation) {
+        showToast('Geolocation is not supported by this browser.');
+        return;
+    }
+    closeActionMenu();
+    showToast('Finding your location…');
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            map.setView([pos.coords.latitude, pos.coords.longitude], 12);
+            showToast('Map centred on your location.');
+        },
+        (err) => {
+            const msgs = {
+                1: 'Location access was denied. Check your browser or device settings.',
+                2: 'Your location could not be determined. Try again.',
+                3: 'Location request timed out. Try again.'
+            };
+            showToast(msgs[err.code] || 'Could not get your location.');
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 12000,
+            maximumAge: 30000
+        }
+    );
 }
 
 function setInfoCardSideFromLatLng() {
@@ -927,11 +966,9 @@ function getFamilyLegData(sourceSegmentIndex) {
 }
 
 function buildMapInfoActionsHtml(sourceSegmentIndex) {
-    const canDeleteWaypoint = selectedWaypointIndex >= 0;
     return `
         <div class="wind-popup-actions">
             <button type="button" class="wind-popup-action-btn primary" onclick="openLegConditionEditorFromPopup(${sourceSegmentIndex}); event.stopPropagation();">Edit conditions</button>
-            ${canDeleteWaypoint ? '<button type="button" class="wind-popup-action-btn" onclick="deleteWaypointFromPopup(event)">Delete</button>' : ''}
         </div>
     `;
 }
@@ -1040,7 +1077,6 @@ function buildPopupConditionEditorHtml(sourceSegmentIndex, preferredLegIndex = n
             <div class="wind-popup-actions popup-editor-actions">
                 <button type="button" class="wind-popup-action-btn primary" onclick="applyPopupConditionChanges(${sourceSegmentIndex}); event.stopPropagation();">Apply</button>
                 <button type="button" class="wind-popup-action-btn" onclick="closePopupConditionEditor(${sourceSegmentIndex}); event.stopPropagation();">Done</button>
-                ${canDeleteWaypoint ? '<button type="button" class="wind-popup-action-btn" onclick="deleteWaypointFromPopup(event)">Delete</button>' : ''}
             </div>
         </div>
     `;
@@ -1284,6 +1320,7 @@ function updateRouteEditUI() {
 
     if (routeEditToggleBtn) {
         routeEditToggleBtn.textContent = routeEditingEnabled ? 'Stop Adding' : 'Add Waypoints';
+        routeEditToggleBtn.parentElement.style.display = '';
     }
     if (deleteWaypointBtn) {
         deleteWaypointBtn.disabled = selectedWaypointIndex < 0;
@@ -1882,45 +1919,8 @@ function renderTopRouteHeader(totalDistance = null, totalHours = null) {
 
 function renderSelectedLegCard(totalDistance = null, totalHours = null) {
     if (!selectedLegCardContent || !selectedLegCard) return;
-
-    const leg = getActiveEditorLeg();
-    const showDesktopEditor = !isCompactEditorMode() && !!leg && !!activeConditionEditor.key;
-
-    if (!showDesktopEditor) {
-        selectedLegCard.style.display = 'none';
-        selectedLegCardContent.innerHTML = '';
-        return;
-    }
-
-    selectedLegCard.style.display = '';
-    selectedLegCard.classList.remove('selected-leg-card-empty');
-
-    const canExpandFamily = familyHasChildren(leg.sourceSegmentIndex);
-    const warningsHtml = renderWarningsHtml(leg.warnings || []);
-
-    selectedLegCardContent.innerHTML = `
-        <div class="selected-leg-card-header">
-            <div>
-                <div class="selected-leg-card-kicker">Edit local conditions</div>
-                <div class="selected-leg-card-title">Leg ${escapeHtml(leg.label)} conditions</div>
-                <div class="selected-leg-card-subtitle">Waypoint ${leg.sourceSegmentIndex + 1} → Waypoint ${leg.sourceSegmentIndex + 2} • ${leg.status}</div>
-            </div>
-            <div class="selected-leg-status">${renderStatus(leg.status)}</div>
-        </div>
-        <div class="selected-leg-grid selected-leg-grid-compact">
-            <div class="selected-leg-metric"><div class="selected-leg-metric-label">Track</div><div class="selected-leg-metric-value">${leg.track.toFixed(1)}°</div></div>
-            <div class="selected-leg-metric"><div class="selected-leg-metric-label">CTS</div><div class="selected-leg-metric-value">${leg.cts.toFixed(1)}°</div></div>
-            <div class="selected-leg-metric"><div class="selected-leg-metric-label">Distance</div><div class="selected-leg-metric-value">${leg.distance.toFixed(2)} NM</div></div>
-            <div class="selected-leg-metric"><div class="selected-leg-metric-label">Duration</div><div class="selected-leg-metric-value">${formatDurationHours(leg.hours)}</div></div>
-        </div>
-        ${warningsHtml}
-        ${renderLegEditorFields(leg)}
-        <div class="selected-leg-actions">
-            <button type="button" class="ghost compact selected-leg-action primary" onclick="applyLegEditorChanges()">Apply changes</button>
-            <button type="button" class="ghost compact selected-leg-action" onclick="closeConditionEditor()">Done</button>
-            ${canExpandFamily ? `<button type="button" class="ghost compact selected-leg-action" onclick="toggleSelectedLegFamilyFromCard()">${expandedFamilySource === leg.sourceSegmentIndex ? 'Collapse Family' : 'Expand Family'}</button>` : ''}
-        </div>
-    `;
+    selectedLegCard.style.display = 'none';
+    selectedLegCardContent.innerHTML = '';
 }
 
 function toggleSelectedLegFamilyFromCard() {
@@ -1935,29 +1935,15 @@ function activateLegFromRail(legIndex) {
     const leg = currentLegData[legIndex];
     if (!leg) return;
 
-    // Set up all state BEFORE calling updateRoute so renderSelectedLegCard sees it
     hideMapInfo();
     selectedLegIndex = legIndex;
     selectedWaypointIndex = -1;
     expandedFamilySource = familyHasChildren(leg.sourceSegmentIndex)
         ? leg.sourceSegmentIndex
         : expandedFamilySource;
-    setActiveConditionEditor('wind', leg.key);
+    clearActiveConditionEditor();
 
-    if (isCompactEditorMode()) {
-        // Mobile: open the bottom sheet editor
-        updateRoute();
-        openLegEditorSheet();
-    } else {
-        // Desktop: updateRoute will now find the active editor and render the inline card
-        updateRoute();
-        requestAnimationFrame(() => {
-            selectedLegCard?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            const input = document.getElementById('editorWindDir');
-            if (input) { input.focus(); input.select(); }
-        });
-    }
-
+    updateRoute();
     scrollSelectedLegIntoView();
 }
 
