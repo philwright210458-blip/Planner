@@ -1,4 +1,4 @@
-const APP_VERSION = 'v49';
+const APP_VERSION = 'v50';
 const APP_CACHE = `sailing-planner-app-${APP_VERSION}`;
 const TILE_CACHE = `sailing-planner-tiles-${APP_VERSION}`;
 const RUNTIME_CACHE = `sailing-planner-runtime-${APP_VERSION}`;

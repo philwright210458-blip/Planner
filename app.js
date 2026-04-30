@@ -1962,7 +1962,7 @@ function renderLegRail() {
                 <div class="leg-rail-card-label">${escapeHtml(leg.label)}</div>
                 <div class="leg-rail-card-distance">${leg.distance.toFixed(2)} NM</div>
             </div>
-            <div class="leg-rail-card-cts">CTS ${leg.cts.toFixed(1)}°</div>
+            <div class="leg-rail-card-cts">CTS ${Math.round(leg.cts)}°</div>
             <div class="leg-rail-card-status">${renderStatus(leg.status)}</div>
         </button>
     `).join('');
@@ -2575,7 +2575,7 @@ function updateRoute() {
             row.innerHTML = `
                 <td>${displayLeg.label}</td>
                 <td>${leg.track.toFixed(1)}°</td>
-                <td>${legData.cts.toFixed(1)}°</td>
+                <td>${Math.round(legData.cts)}°</td>
                 <td>${leg.distance.toFixed(2)}</td>
                 <td>${renderConditionPill('wind', displayLeg.key, wind.dir, wind.speed, i)}</td>
                 <td>${renderConditionPill('tide', displayLeg.key, tide.dir, tide.speed, i)}</td>
