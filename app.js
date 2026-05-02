@@ -66,7 +66,6 @@ const destinationInput = document.getElementById('destination');
 const departureDateInput = document.getElementById('departureDateInput');
 const departureTimeInput = document.getElementById('departureTimeInput');
 const autoSplitLegsInput = document.getElementById('autoSplitLegs');
-const locateBtn = document.getElementById('locateBtn');
 const actionMenuBtn = document.getElementById('actionMenuBtn');
 const actionMenu = document.getElementById('actionMenu');
 const actionMenuCurrentLocation = document.getElementById('actionMenuCurrentLocation');
@@ -75,8 +74,6 @@ const actionMenuLiveTide = document.getElementById('actionMenuLiveTide');
 const actionMenuTidalAtlas = document.getElementById('actionMenuTidalAtlas');
 const actionMenuSaveRoute = document.getElementById('actionMenuSaveRoute');
 const actionMenuLoadRoute = document.getElementById('actionMenuLoadRoute');
-const liveWindStatus = document.getElementById('liveWindStatus');
-const liveTideStatus = document.getElementById('liveTideStatus');
 const liveTideSetupBtn = document.getElementById('liveTideSetupBtn');
 const liveTideKeyCard = document.getElementById('liveTideKeyCard');
 const stormglassApiKeyInput = document.getElementById('stormglassApiKey');
@@ -84,21 +81,12 @@ const saveStormglassKeyBtn = document.getElementById('saveStormglassKeyBtn');
 const clearStormglassKeyBtn = document.getElementById('clearStormglassKeyBtn');
 const toastMessage = document.getElementById('toastMessage');
 const liveTideKeyStatus = document.getElementById('liveTideKeyStatus');
-const legEditorBackdrop = document.getElementById('legEditorBackdrop');
-const legEditorSheet = document.getElementById('legEditorSheet');
-const legEditorClose = document.getElementById('legEditorClose');
-const legEditorCancel = document.getElementById('legEditorCancel');
-const legEditorApply = document.getElementById('legEditorApply');
-const legEditorBody = document.getElementById('legEditorBody');
-const legEditorTitle = document.getElementById('legEditorTitle');
-const legEditorSubtitle = document.getElementById('legEditorSubtitle');
 const savedRoutesBackdrop = document.getElementById('savedRoutesBackdrop');
 const savedRoutesModal = document.getElementById('savedRoutesModal');
 const savedRoutesList = document.getElementById('savedRoutesList');
 const savedRoutesClose = document.getElementById('savedRoutesClose');
 const routeEditToggleBtn = document.getElementById('routeEditToggleBtn');
 const deleteWaypointBtn = document.getElementById('deleteWaypointBtn');
-const routeEditStatus = document.getElementById('routeEditStatus');
 
 const mapInfoCard = document.getElementById('mapInfoCard');
 const mapInfoContent = document.getElementById('mapInfoContent');
@@ -178,8 +166,6 @@ const SAVED_ROUTES_STORAGE = 'sailingPlannerSavedRoutes';
 let expandedFamilySource = null;
 let waypointWarnings = {};
 let legWarnings = {};
-let waterCheckCache = new Map();
-let landWarningRequestId = 0;
 let lastCompletedLandWarningRouteKey = '';
 
 function toRad(d) {
@@ -207,20 +193,6 @@ function bearing(lat1, lon1, lat2, lon2) {
         Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) *
         Math.cos(toRad(lon2 - lon1));
     return (toDeg(Math.atan2(y, x)) + 360) % 360;
-}
-
-function parseTimeToMinutes(timeStr) {
-    if (!timeStr || !timeStr.includes(':')) return 9 * 60;
-    const [h, m] = timeStr.split(':').map(v => parseInt(v, 10) || 0);
-    return h * 60 + m;
-}
-
-function minutesToTimeString(totalMinutes) {
-    totalMinutes = Math.round(totalMinutes);
-    totalMinutes = ((totalMinutes % 1440) + 1440) % 1440;
-    const h = Math.floor(totalMinutes / 60);
-    const m = totalMinutes % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
 function formatDurationHours(hours) {
@@ -1154,29 +1126,6 @@ function closePopupConditionEditor(sourceSegmentIndex) {
     showMapInfo(popupLatLng, buildFamilyInfoHtml(sourceSegmentIndex) + getWaypointWarningHtml(selectedWaypointIndex));
 }
 
-function openRouteEditorFromPopup(sourceSegmentIndex) {
-    hideMapInfo();
-    closeActionMenu();
-    closeSettingsDrawer();
-
-    const targetLegIndex = getFirstLegIndexForSource(sourceSegmentIndex);
-    if (targetLegIndex < 0) return;
-
-    selectedWaypointIndex = -1;
-    clearActiveConditionEditor();
-    expandedFamilySource = familyHasChildren(sourceSegmentIndex) ? sourceSegmentIndex : null;
-    selectedLegIndex = targetLegIndex;
-
-    if (drawer) {
-        const currentHeight = parseFloat(getComputedStyle(drawer).height) || 0;
-        const targetHeight = Math.max(currentHeight, getSnapHeight('middle'));
-        setDrawerHeight(targetHeight, true);
-    }
-
-    updateRoute();
-    requestAnimationFrame(() => scrollSelectedLegIntoView());
-}
-
 function deleteWaypointFromPopup(event) {
     if (event) event.stopPropagation();
     if (selectedWaypointIndex < 0) return;
@@ -1186,19 +1135,6 @@ function deleteWaypointFromPopup(event) {
 function clearActiveConditionEditor() {
     activeConditionEditor.key = null;
     activeConditionEditor.kind = null;
-}
-
-function isCompactEditorMode() {
-    return window.matchMedia('(max-width: 767px)').matches;
-}
-
-function getLegByIndex(index) {
-    return index >= 0 ? currentLegData[index] || null : null;
-}
-
-function getActiveEditorLeg() {
-    if (!activeConditionEditor.key) return null;
-    return currentLegData.find(leg => leg.key === activeConditionEditor.key) || getLegByIndex(selectedLegIndex);
 }
 
 function setLegConditionValue(kind, key, type, value) {
@@ -1212,107 +1148,9 @@ function setLegConditionValue(kind, key, type, value) {
     store[key][type] = type === 'dir' ? normaliseDeg(v) : v;
 }
 
-function renderLegEditorFields(leg) {
-    if (!leg) return '';
-    const focusKind = activeConditionEditor.kind || 'wind';
-    const windSpeedText = Number(leg.windSpeed).toFixed(leg.windSpeed % 1 ? 1 : 0);
-    const tideSpeedText = Number(leg.tideSpeed).toFixed(leg.tideSpeed % 1 ? 1 : 0);
-    return `
-        <div class="leg-editor-grid">
-            <div class="leg-editor-group ${focusKind === 'wind' ? 'focused' : ''}">
-                <div class="leg-editor-group-title">Wind</div>
-                <div class="leg-editor-inline-row">
-                    <label class="leg-editor-field" for="editorWindDir">
-                        <span class="leg-editor-label">Direction</span>
-                        <input id="editorWindDir" class="leg-editor-input" type="number" inputmode="numeric" step="1" value="${Math.round(leg.windDir)}">
-                    </label>
-                    <label class="leg-editor-field" for="editorWindSpeed">
-                        <span class="leg-editor-label">Speed</span>
-                        <input id="editorWindSpeed" class="leg-editor-input" type="number" inputmode="decimal" step="0.1" value="${windSpeedText}">
-                    </label>
-                </div>
-            </div>
-            <div class="leg-editor-group ${focusKind === 'tide' ? 'focused' : ''}">
-                <div class="leg-editor-group-title">Tide</div>
-                <div class="leg-editor-inline-row">
-                    <label class="leg-editor-field" for="editorTideDir">
-                        <span class="leg-editor-label">Direction</span>
-                        <input id="editorTideDir" class="leg-editor-input" type="number" inputmode="numeric" step="1" value="${Math.round(leg.tideDir)}">
-                    </label>
-                    <label class="leg-editor-field" for="editorTideSpeed">
-                        <span class="leg-editor-label">Speed</span>
-                        <input id="editorTideSpeed" class="leg-editor-input" type="number" inputmode="decimal" step="0.1" value="${tideSpeedText}">
-                    </label>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function openLegEditorSheet() {
-    const leg = getActiveEditorLeg();
-    if (!leg || !legEditorSheet || !legEditorBackdrop || !legEditorBody) return;
-    if (legEditorTitle) legEditorTitle.textContent = `Leg ${leg.label} conditions`;
-    if (legEditorSubtitle) legEditorSubtitle.textContent = `Waypoint ${leg.sourceSegmentIndex + 1} → Waypoint ${leg.sourceSegmentIndex + 2} • ${leg.status}`;
-    legEditorBody.innerHTML = renderLegEditorFields(leg);
-    legEditorSheet.classList.remove('hidden');
-    legEditorBackdrop.classList.remove('hidden');
-    legEditorSheet.setAttribute('aria-hidden', 'false');
-    legEditorBackdrop.setAttribute('aria-hidden', 'false');
-    requestAnimationFrame(() => {
-        const focusId = activeConditionEditor.kind === 'tide' ? 'editorTideDir' : 'editorWindDir';
-        const input = document.getElementById(focusId);
-        if (input) {
-            input.focus();
-            input.select();
-        }
-    });
-}
-
-function closeLegEditorSheet() {
-    if (!legEditorSheet || !legEditorBackdrop) return;
-    legEditorSheet.classList.add('hidden');
-    legEditorBackdrop.classList.add('hidden');
-    legEditorSheet.setAttribute('aria-hidden', 'true');
-    legEditorBackdrop.setAttribute('aria-hidden', 'true');
-}
-
-function applyLegEditorChanges() {
-    const leg = getActiveEditorLeg();
-    if (!leg) return;
-
-    const wasPopupVisible = !!(mapInfoCard && !mapInfoCard.classList.contains('hidden'));
-    const sourceSegmentIndex = leg.sourceSegmentIndex;
-    const popupLatLng = selectedWaypointIndex >= 0 && waypoints[selectedWaypointIndex]
-        ? waypoints[selectedWaypointIndex].getLatLng()
-        : leg.start;
-
-    const windDirInput = document.getElementById('editorWindDir') || document.getElementById('popupWindDir');
-    const windSpeedInput = document.getElementById('editorWindSpeed') || document.getElementById('popupWindSpeed');
-    const tideDirInput = document.getElementById('editorTideDir') || document.getElementById('popupTideDir');
-    const tideSpeedInput = document.getElementById('editorTideSpeed') || document.getElementById('popupTideSpeed');
-
-    setLegConditionValue('wind', leg.key, 'dir', windDirInput?.value);
-    setLegConditionValue('wind', leg.key, 'speed', windSpeedInput?.value);
-    setLegConditionValue('tide', leg.key, 'dir', tideDirInput?.value);
-    setLegConditionValue('tide', leg.key, 'speed', tideSpeedInput?.value);
-
-    if (isCompactEditorMode()) closeLegEditorSheet();
-    clearActiveConditionEditor();
-    updateRoute();
-
-    if (wasPopupVisible && sourceSegmentIndex >= 0) {
-        showMapInfo(popupLatLng, buildFamilyInfoHtml(sourceSegmentIndex) + getWaypointWarningHtml(selectedWaypointIndex));
-    }
-}
-
 function setActiveConditionEditor(kind, key) {
     activeConditionEditor.key = key;
     activeConditionEditor.kind = kind;
-}
-
-function isConditionEditorActive(kind, key) {
-    return activeConditionEditor.kind === kind && activeConditionEditor.key === key;
 }
 
 function updateRouteEditUI() {
@@ -1325,9 +1163,6 @@ function updateRouteEditUI() {
     if (deleteWaypointBtn) {
         deleteWaypointBtn.disabled = selectedWaypointIndex < 0;
         deleteWaypointBtn.textContent = 'Delete Waypoint';
-    }
-    if (routeEditStatus) {
-        routeEditStatus.textContent = '';
     }
     if (routeModeBadge) {
         routeModeBadge.classList.toggle('hidden', !routeEditingEnabled);
@@ -1430,32 +1265,6 @@ function deleteSelectedWaypoint() {
     hideMapInfo();
     clearActiveConditionEditor();
     updateRoute();
-}
-
-function openConditionEditor(kind, key, legIndex) {
-    const leg = getLegByIndex(legIndex);
-    if (!leg) return;
-
-    selectedLegIndex = legIndex;
-    selectedWaypointIndex = -1;
-    setActiveConditionEditor(kind, key);
-    expandedFamilySource = familyHasChildren(leg.sourceSegmentIndex)
-        ? leg.sourceSegmentIndex
-        : expandedFamilySource;
-    closeLegEditorSheet();
-    updateRoute();
-
-    const popupLatLng = interpolateLatLng(leg.start, leg.end, 0.5);
-    showMapInfo(popupLatLng, buildPopupConditionEditorHtml(leg.sourceSegmentIndex, legIndex));
-
-    requestAnimationFrame(() => {
-        const focusId = kind === 'tide' ? 'popupTideDir' : 'popupWindDir';
-        const input = document.getElementById(focusId);
-        if (input) {
-            input.focus();
-            input.select();
-        }
-    });
 }
 
 function clearArrowMarkers() {
@@ -1773,14 +1582,6 @@ function formatDurationText(totalHours) {
     return totalHours > 0 ? formatDurationHours(totalHours) : '—';
 }
 
-
-function getEditedLegCount() {
-    const keys = new Set([
-        ...Object.keys(perLegWind || {}),
-        ...Object.keys(perLegTide || {})
-    ]);
-    return keys.size;
-}
 
 function getSplitLegCount() {
     return currentLegData.filter(leg => /[a-z]+$/i.test(leg.label)).length;
@@ -2361,10 +2162,6 @@ function getLatLngRouteKey(latlngs) {
     return (latlngs || []).map(latlng => `${latlng.lat.toFixed(5)},${latlng.lng.toFixed(5)}`).join('|');
 }
 
-async function fetchWaterState(latlng) {
-    return null;
-}
-
 async function refreshLandWarningsForRoute(latlngs) {
     waypointWarnings = {};
     legWarnings = {};
@@ -2387,70 +2184,21 @@ function highlightSelection() {
         });
     });
 
-    document.querySelectorAll('#legsBody tr').forEach((row) => {
-        const sourceIndex = Number(row.dataset.sourceSegmentIndex);
-        const inActiveFamily = sourceIndex === activeFamilySource;
-        row.classList.toggle('selected-leg-row', inActiveFamily);
-    });
     syncLegRailSelection();
 }
 
 function scrollSelectedLegIntoView() {
     if (selectedLegIndex < 0) return;
-    const rows = document.querySelectorAll('#legsBody tr');
-    if (rows[selectedLegIndex]) {
-        rows[selectedLegIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    const track = document.getElementById('legRailTrack');
+    if (!track) return;
+    const activeCard = track.querySelector(`[data-leg-rail-index="${selectedLegIndex}"]`);
+    if (activeCard) {
+        activeCard.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
     }
 }
 
-function renderConditionPill(kind, key, dir, speed, legIndex) {
-    const activeClass = isConditionEditorActive(kind, key) ? ' active' : '';
-    return `
-        <button
-            type="button"
-            class="cond-pill${activeClass}"
-            onclick="openConditionEditor('${kind}', '${key}', ${legIndex}); event.stopPropagation();"
-            aria-label="Edit ${kind} for leg ${legIndex + 1}"
-        >${Math.round(dir)}° @ ${Number(speed).toFixed(speed % 1 ? 1 : 0)} kt</button>
-    `;
-}
-
-function renderConditionEditor(kind, key, dir, speed) {
-    const fn = kind === 'wind' ? 'changeWind' : 'changeTide';
-    return `
-        <div class="cond-editor" onclick="event.stopPropagation()">
-            <input
-                class="leg-inline-input"
-                data-editor-kind="${kind}"
-                data-editor-key="${key}"
-                type="number"
-                inputmode="decimal"
-                value="${dir}"
-                step="1"
-                onclick="this.select(); event.stopPropagation();"
-                onfocus="this.select()"
-                onchange="${fn}('${key}', this.value, 'dir')"
-                onblur="closeConditionEditor()"
-                onkeydown="handleLegInputKeydown(event, this)"
-            >
-            <span class="cond-editor-text">° @</span>
-            <input
-                class="leg-inline-input"
-                data-editor-kind="${kind}"
-                data-editor-key="${key}"
-                type="number"
-                inputmode="decimal"
-                value="${speed}"
-                step="0.1"
-                onclick="this.select(); event.stopPropagation();"
-                onfocus="this.select()"
-                onchange="${fn}('${key}', this.value, 'speed')"
-                onblur="closeConditionEditor()"
-                onkeydown="handleLegInputKeydown(event, this)"
-            >
-            <span class="cond-editor-text">kt</span>
-        </div>
-    `;
+function renderConditionPillCompact(kind, dir, speed) {
+    return `${Math.round(dir)}° @ ${Number(speed).toFixed(speed % 1 ? 1 : 0)} kt`;
 }
 
 function updateRoute() {
@@ -2463,9 +2211,6 @@ function updateRoute() {
     clearWindBarbs();
     clearLegSegments();
     clearGeneratedWaypointMarkers();
-
-    const tbody = document.getElementById('legsBody');
-    if (tbody) tbody.innerHTML = '';
 
     refreshWaypointIcons();
 
@@ -2564,36 +2309,6 @@ function updateRoute() {
 
         currentLegData.push(legData);
 
-        const isExpandedFamily = expandedFamilySource === displayLeg.sourceSegmentIndex;
-        const shouldShowRow = displayLeg.chunkIndex === 0 || isExpandedFamily;
-
-        if (tbody && shouldShowRow) {
-            const row = document.createElement('tr');
-            row.dataset.legIndex = String(i);
-            row.dataset.sourceSegmentIndex = String(displayLeg.sourceSegmentIndex);
-            row.classList.add(displayLeg.chunkIndex === 0 ? 'route-parent-row' : 'route-child-row');
-            row.innerHTML = `
-                <td>${displayLeg.label}</td>
-                <td>${leg.track.toFixed(1)}°</td>
-                <td>${Math.round(legData.cts)}°</td>
-                <td>${leg.distance.toFixed(2)}</td>
-                <td>${renderConditionPill('wind', displayLeg.key, wind.dir, wind.speed, i)}</td>
-                <td>${renderConditionPill('tide', displayLeg.key, tide.dir, tide.speed, i)}</td>
-                <td><div class="status-stack">${renderStatus(leg.status)}${displayLeg.chunkIndex === 0 ? renderWarningsHtml(familyWarnings) : ''}</div></td>
-            `;
-
-            row.addEventListener('click', (e) => {
-                if (e.target.closest('input') || e.target.closest('.cond-pill')) return;
-                if (displayLeg.chunkIndex === 0) {
-                    toggleFamilyExpansion(displayLeg.sourceSegmentIndex);
-                } else {
-                    selectLeg(i);
-                }
-            });
-
-            tbody.appendChild(row);
-        }
-
         addLegArrow(
             (displayLeg.start.lat + displayLeg.end.lat) / 2,
             (displayLeg.start.lng + displayLeg.end.lng) / 2,
@@ -2652,50 +2367,12 @@ function renderStatus(status) {
     return `<span class="status-chip ${cls}">${status}</span>`;
 }
 
-function handleLegInputKeydown(event, input) {
-    if (event.key === 'Enter') input.blur();
-    event.stopPropagation();
-}
-
-function changeWind(key, value, type) {
-    if (!perLegWind[key]) perLegWind[key] = {};
-    const parsed = parseFloat(value);
-    const v = Number.isFinite(parsed)
-        ? parsed
-        : (perLegWind[key][type] ?? defaults[type === 'dir' ? 'windDir' : 'windSpeed']);
-    perLegWind[key][type] = type === 'dir' ? normaliseDeg(v) : v;
-    updateRoute();
-}
-
-function changeTide(key, value, type) {
-    if (!perLegTide[key]) perLegTide[key] = {};
-    const parsed = parseFloat(value);
-    const v = Number.isFinite(parsed)
-        ? parsed
-        : (perLegTide[key][type] ?? defaults[type === 'dir' ? 'tideDir' : 'tideSpeed']);
-    perLegTide[key][type] = type === 'dir' ? normaliseDeg(v) : v;
-    updateRoute();
-}
-
-function closeConditionEditor() {
-    clearActiveConditionEditor();
-    closeLegEditorSheet();
-    updateRoute();
-}
-
-window.changeWind = changeWind;
-window.changeTide = changeTide;
-window.handleLegInputKeydown = handleLegInputKeydown;
-window.openConditionEditor = openConditionEditor;
-window.closeConditionEditor = closeConditionEditor;
-window.openRouteEditorFromPopup = openRouteEditorFromPopup;
 window.openLegConditionEditorFromPopup = openLegConditionEditorFromPopup;
 window.applyPopupConditionChanges = applyPopupConditionChanges;
 window.closePopupConditionEditor = closePopupConditionEditor;
 window.deleteWaypointFromPopup = deleteWaypointFromPopup;
 window.toggleSelectedLegFamilyFromCard = toggleSelectedLegFamilyFromCard;
 window.deleteSelectedWaypoint = deleteSelectedWaypoint;
-window.applyLegEditorChanges = applyLegEditorChanges;
 
 document.querySelectorAll('.summary-tab').forEach(btn => {
     btn.addEventListener('click', () => activateTab(btn.dataset.tab));
@@ -2712,10 +2389,6 @@ if (settingsDrawerHandle) settingsDrawerHandle.addEventListener('click', () => {
 if (settingsDrawerClose) settingsDrawerClose.addEventListener('click', closeSettingsDrawer);
 if (settingsBackdrop) settingsBackdrop.addEventListener('click', closeSettingsDrawer);
 if (savedRoutesClose) savedRoutesClose.addEventListener('click', closeSavedRoutesModal);
-if (legEditorClose) legEditorClose.addEventListener('click', closeConditionEditor);
-if (legEditorCancel) legEditorCancel.addEventListener('click', closeConditionEditor);
-if (legEditorApply) legEditorApply.addEventListener('click', applyLegEditorChanges);
-if (legEditorBackdrop) legEditorBackdrop.addEventListener('click', closeConditionEditor);
 if (savedRoutesBackdrop) savedRoutesBackdrop.addEventListener('click', closeSavedRoutesModal);
 if (savedRoutesList) savedRoutesList.addEventListener('click', (e) => {
     const loadBtn = e.target.closest('[data-load-route-id]');
@@ -2733,13 +2406,11 @@ if (saveStormglassKeyBtn) saveStormglassKeyBtn.addEventListener('click', () => {
     const value = (stormglassApiKeyInput?.value || '').trim();
     setStormglassApiKey(value);
     updateLiveTideKeyUI(value ? 'Stormglass API key saved.' : 'No Stormglass API key saved.');
-    if (liveTideStatus && value) liveTideStatus.textContent = '';
 });
 if (clearStormglassKeyBtn) clearStormglassKeyBtn.addEventListener('click', () => {
     setStormglassApiKey('');
     if (stormglassApiKeyInput) stormglassApiKeyInput.value = '';
     updateLiveTideKeyUI('Stormglass API key cleared.');
-    if (liveTideStatus) liveTideStatus.textContent = '';
 });
 
 document.addEventListener('keydown', (e) => {
@@ -2811,7 +2482,6 @@ window.addEventListener('resize', () => {
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 
-if (locateBtn) locateBtn.addEventListener('click', useLocation);
 if (actionMenuBtn) actionMenuBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleActionMenu(); });
 if (actionMenuCurrentLocation) actionMenuCurrentLocation.addEventListener('click', () => { useLocation(); closeActionMenu(); });
 if (actionMenuLiveWind) actionMenuLiveWind.addEventListener('click', async () => { closeActionMenu(); await applyLiveWind(); });
