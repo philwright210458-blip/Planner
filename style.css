@@ -1036,6 +1036,10 @@ tbody tr:last-child td:last-child {
         grid-area: auto;
     }
 
+    .summary-chip-meta {
+        display: none;
+    }
+
     .summary-chip {
         padding: 6px;
     }
@@ -1052,7 +1056,10 @@ tbody tr:last-child td:last-child {
     .summary-action-btn {
         min-height: 34px;
         font-size: 11px;
-        padding: 8px 8px;
+        padding: 8px 6px;
+        white-space: normal;
+        line-height: 1.2;
+        text-align: center;
     }
 
     .fab {
