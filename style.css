@@ -134,10 +134,10 @@ body.map-ready #map {
     max-width: calc(100vw - 40px);
     overflow: auto;
     background: linear-gradient(160deg, rgba(255,255,255,0.97) 0%, rgba(252,248,243,0.97) 100%);
-    border: 2px solid rgba(240, 150, 30, 0.55);
+    border: 2px solid var(--selected);
     border-radius: 24px;
     box-shadow:
-        0 0 0 4px rgba(240,150,30,0.08),
+        0 0 0 4px rgba(255,123,0,0.08),
         0 16px 36px rgba(20,38,56,0.16),
         0 3px 8px rgba(20,38,56,0.10),
         inset 0 1px 0 rgba(255,255,255,0.9);
@@ -327,11 +327,11 @@ body.map-ready #map {
     background: linear-gradient(180deg, rgba(248,252,255,0.92) 0%, rgba(240,247,253,0.94) 100%);
     border-top-left-radius: 32px;
     border-top-right-radius: 32px;
-    border-top: 2px solid rgba(240, 150, 30, 0.55);
-    border-left: 2px solid rgba(240, 150, 30, 0.55);
-    border-right: 2px solid rgba(240, 150, 30, 0.55);
+    border-top: 2px solid var(--selected);
+    border-left: 2px solid var(--selected);
+    border-right: 2px solid var(--selected);
     box-shadow:
-        0 0 0 4px rgba(240,150,30,0.08),
+        0 0 0 4px rgba(255,123,0,0.08),
         0 -10px 36px rgba(20,38,56,0.12),
         0 -2px 8px rgba(20,38,56,0.06);
     z-index: 1100;
@@ -1139,14 +1139,14 @@ tbody tr:last-child td:last-child {
     width: min(420px, calc(100vw - 32px));
     z-index: 1300;
     background: rgba(255,255,255,0.92);
-    border-top: 2px solid rgba(240, 150, 30, 0.55);
-    border-right: 2px solid rgba(240, 150, 30, 0.55);
-    border-bottom: 2px solid rgba(240, 150, 30, 0.55);
+    border-top: 2px solid var(--selected);
+    border-right: 2px solid var(--selected);
+    border-bottom: 2px solid var(--selected);
     border-left: none;
     border-top-right-radius: 28px;
     border-bottom-right-radius: 28px;
     box-shadow:
-        0 0 0 4px rgba(240,150,30,0.08),
+        0 0 0 4px rgba(255,123,0,0.08),
         18px 0 40px rgba(25,42,60,0.12);
     backdrop-filter: blur(20px);
     transform: translateX(0);
@@ -1640,9 +1640,9 @@ input[type="time"] {
     padding: 10px 12px;
     border-radius: 22px;
     background: linear-gradient(160deg, rgba(255,255,255,0.97) 0%, rgba(245,250,255,0.97) 100%);
-    border: 2px solid rgba(240, 150, 30, 0.55);
+    border: 2px solid var(--selected);
     box-shadow:
-        0 0 0 4px rgba(240,150,30,0.08),
+        0 0 0 4px rgba(255,123,0,0.08),
         0 12px 28px rgba(20,38,56,0.12),
         0 2px 6px rgba(20,38,56,0.08),
         inset 0 1px 0 rgba(255,255,255,0.9);
@@ -2059,11 +2059,6 @@ body.route-editing .summary-chip-edit .summary-action-btn {
 .status-running {
     background: #e9f7ee;
     color: #3f7d4f;
-}
-
-.map-info-card {
-    border-color: var(--selected-line) !important;
-    box-shadow: 0 12px 26px rgba(25,42,60,0.12), 0 0 0 3px rgba(255,123,0,0.06) !important;
 }
 
 .map-info-card.editing {
