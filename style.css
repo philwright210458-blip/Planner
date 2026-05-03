@@ -1352,29 +1352,43 @@ tbody tr:last-child td:last-child {
     grid-row: 1;
 }
 
-.form-grid-route-setup .form-field-start-location {
+.form-grid-route-setup .form-field-leeway {
     grid-column: 2;
     grid-row: 1;
 }
 
-.form-grid-route-setup .form-field-departure-date {
+.form-grid-route-setup .form-field-start-location {
     grid-column: 1;
     grid-row: 2;
+}
+
+.form-grid-route-setup .form-field-departure-date {
+    grid-column: 1;
+    grid-row: 3;
 }
 
 .form-grid-route-setup .form-field-departure-time {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 3;
 }
 
 .form-grid-route-setup .form-field-live-tide {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 4;
 }
 
 .form-grid-route-setup .form-field-destination {
     grid-column: 2;
-    grid-row: 3;
+    grid-row: 4;
+}
+
+.form-grid-route-setup .form-field-start-location,
+.form-grid-route-setup .form-field-destination {
+    grid-column: 2;
+}
+
+.form-grid-route-setup .form-field-start-location {
+    grid-row: 2;
 }
 
 input[type="date"],

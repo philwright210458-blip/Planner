@@ -40,6 +40,7 @@ const defaults = {
     windSpeed: 15,
     tideDir: 0,
     tideSpeed: 1,
+    leeway: 3,
     startLocation: '',
     destination: ''
 };
@@ -57,6 +58,7 @@ const settingsDrawerClose = document.getElementById('settingsDrawerClose');
 const launchSplash = document.getElementById('launchSplash');
 
 const boatSpeedInput = document.getElementById('boatSpeed');
+const leewayInput = document.getElementById('leeway');
 const defaultWindDirInput = document.getElementById('defaultWindDir');
 const defaultWindSpeedInput = document.getElementById('defaultWindSpeed');
 const defaultTideDirInput = document.getElementById('defaultTideDir');
@@ -591,6 +593,7 @@ function buildRouteSnapshot() {
             destination: destinationInput?.value || ''
         },
         boatSpeed: Number(boatSpeedInput?.value || 5),
+        leeway: Number(leewayInput?.value ?? defaults.leeway),
         autoSplitLegsEnabled: !!autoSplitLegsInput?.checked
     };
 }
@@ -771,6 +774,11 @@ function applyRouteSnapshot(routeSnapshot) {
     const savedBoatSpeed = Number(routeSnapshot.boatSpeed);
     if (boatSpeedInput && Number.isFinite(savedBoatSpeed)) {
         boatSpeedInput.value = String(Math.max(1, Math.min(10, savedBoatSpeed)));
+    }
+
+    const savedLeeway = Number(routeSnapshot.leeway);
+    if (leewayInput && Number.isFinite(savedLeeway)) {
+        leewayInput.value = String(Math.max(0, Math.min(15, savedLeeway)));
     }
 
     autoSplitLegsEnabled = !!routeSnapshot.autoSplitLegsEnabled;
@@ -1447,13 +1455,24 @@ function calculateLeg(p1, p2, performancePercent, windDir, windSpeed, tideDir, t
     const stw = getPerformanceBoatSpeed(performancePercent);
 
     // Solve the velocity triangle for true Course to Steer.
-    // We need heading h such that: boat vector (stw, h) + tide vector = resultant along track.
-    // The cross-track component of tide must be cancelled by the boat's heading offset.
     // sin(h - track) = (tideSpeed / stw) * sin(tideDir - track)
     const sinCorrection = (tideSpeed / Math.max(stw, 0.1)) * Math.sin(toRad(tideDir - track));
     const clampedSin = Math.max(-1, Math.min(1, sinCorrection));
     const correction = toDeg(Math.asin(clampedSin));
-    const cts = normaliseDeg(track - correction);
+    const ctsBase = normaliseDeg(track - correction);
+
+    // Apply leeway correction.
+    // Leeway causes the boat to slip to leeward — we must pre-compensate by steering
+    // that many degrees into the wind. On a run (relativeAngle > 150°) leeway is negligible.
+    const leewayDeg = Math.max(0, Math.min(15, parseFloat(leewayInput?.value) ?? defaults.leeway));
+    let ctsLeewayCorrection = 0;
+    if (relativeAngle <= 150) {
+        // Wind from starboard: boat slips to port → steer further to starboard (add leeway)
+        // Wind from port: boat slips to starboard → steer further to port (subtract leeway)
+        const windOnStarboard = ((windDir - track + 360) % 360) < 180;
+        ctsLeewayCorrection = windOnStarboard ? leewayDeg : -leewayDeg;
+    }
+    const cts = normaliseDeg(ctsBase + ctsLeewayCorrection);
 
     // Speed over ground: along-track component of (boat on CTS + tide)
     const ctsRad = toRad(cts);
@@ -2504,6 +2523,7 @@ if (autoSplitLegsInput) {
 }
 
 if (boatSpeedInput) boatSpeedInput.addEventListener('input', updateRoute);
+if (leewayInput) leewayInput.addEventListener('input', updateRoute);
 if (defaultWindDirInput) defaultWindDirInput.addEventListener('input', updateDefaultsFromSettings);
 if (defaultWindSpeedInput) defaultWindSpeedInput.addEventListener('input', updateDefaultsFromSettings);
 if (defaultTideDirInput) defaultTideDirInput.addEventListener('input', updateDefaultsFromSettings);
