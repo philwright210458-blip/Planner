@@ -16,7 +16,7 @@
     --glow: rgba(77,143,196,0.22);
     --shadow-soft: 0 4px 14px rgba(20,38,56,0.09), 0 1px 3px rgba(20,38,56,0.06);
     --shadow-strong: 0 12px 32px rgba(20,38,56,0.14), 0 2px 6px rgba(20,38,56,0.08);
-    --shadow-3d: 0 8px 20px rgba(20,38,56,0.12), 0 2px 4px rgba(20,38,56,0.08), inset 0 1px 0 rgba(255,255,255,0.7);
+    --shadow-3d: 0 4px 14px rgba(20,38,56,0.10), 0 1px 3px rgba(20,38,56,0.07);
     --top-route-left: 66px;
     --route-badge-left: 66px;
 }
@@ -97,10 +97,7 @@ body.map-ready #map {
     font-family: inherit;
     letter-spacing: 0.3px;
     cursor: pointer;
-    box-shadow:
-        0 8px 24px rgba(20,60,100,0.32),
-        0 2px 6px rgba(20,60,100,0.18),
-        inset 0 1px 0 rgba(255,255,255,0.2);
+    box-shadow: 0 4px 16px rgba(20,60,100,0.28);
     opacity: 0;
     transform: translateY(12px);
     transition: opacity 0.4s ease, transform 0.4s ease, background 0.15s ease, box-shadow 0.15s ease;
@@ -115,14 +112,11 @@ body.map-ready #map {
 
 .splash-continue-btn:hover {
     background: linear-gradient(160deg, #2478b8 0%, #1a619e 100%);
-    box-shadow:
-        0 12px 28px rgba(20,60,100,0.36),
-        0 2px 6px rgba(20,60,100,0.2),
-        inset 0 1px 0 rgba(255,255,255,0.25);
+    box-shadow: 0 6px 20px rgba(20,60,100,0.32);
 }
 
 .splash-continue-btn:active {
-    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(20,60,100,0.24);
 }
 
 .map-info-card {
@@ -220,8 +214,7 @@ body.map-ready #map {
 
 .fab:hover {
     background: linear-gradient(160deg, rgba(255,255,255,1) 0%, rgba(240,247,252,1) 100%);
-    box-shadow: 0 12px 28px rgba(20,38,56,0.16), 0 2px 6px rgba(20,38,56,0.10), inset 0 1px 0 rgba(255,255,255,0.9);
-    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(20,38,56,0.13), 0 2px 5px rgba(20,38,56,0.08);
 }
 
 .fab-icon svg {
@@ -671,7 +664,8 @@ label {
 
 input[type="number"],
 input[type="time"],
-input[type="text"] {
+input[type="text"],
+input[type="date"] {
     display: block;
     width: 100%;
     min-width: 0;
@@ -689,7 +683,8 @@ input[type="text"] {
 
 input[type="number"]:focus,
 input[type="time"]:focus,
-input[type="text"]:focus {
+input[type="text"]:focus,
+input[type="date"]:focus {
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(125,167,202,0.14);
@@ -705,14 +700,13 @@ button.ghost {
     font-family: inherit;
     background: linear-gradient(160deg, #f5f9fc 0%, #e8f0f7 100%);
     color: var(--text-main);
-    box-shadow: 0 2px 5px rgba(20,38,56,0.07), inset 0 1px 0 rgba(255,255,255,0.8);
-    transition: background 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+    box-shadow: 0 1px 4px rgba(20,38,56,0.08);
+    transition: background 0.12s ease, box-shadow 0.12s ease;
 }
 
 button.ghost:hover {
     background: linear-gradient(160deg, #eef5fb 0%, #dceaf5 100%);
-    box-shadow: 0 4px 10px rgba(20,38,56,0.1), inset 0 1px 0 rgba(255,255,255,0.9);
-    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(20,38,56,0.11);
 }
 
 button.ghost:disabled {
@@ -725,12 +719,12 @@ button.accent-ghost {
     background: linear-gradient(160deg, #e4f0fa 0%, #cce0f5 100%);
     color: var(--accent-strong);
     border-color: rgba(31,111,170,0.2);
-    box-shadow: 0 2px 5px rgba(31,111,170,0.1), inset 0 1px 0 rgba(255,255,255,0.8);
+    box-shadow: 0 1px 4px rgba(31,111,170,0.10);
 }
 
 button.accent-ghost:hover {
     background: linear-gradient(160deg, #d8eaf8 0%, #bdd5ee 100%);
-    box-shadow: 0 4px 10px rgba(31,111,170,0.15), inset 0 1px 0 rgba(255,255,255,0.9);
+    box-shadow: 0 2px 8px rgba(31,111,170,0.14);
 }
 
 button.compact {
@@ -861,7 +855,7 @@ tbody tr:last-child td:last-child {
 }
 
 .wind-popup-action-btn {
-    border: 1px solid rgba(36,54,69,0.10);
+    border: 1px solid rgba(36,54,69,0.12);
     border-radius: 12px;
     background: linear-gradient(160deg, #f4f9fc 0%, #e6f0f8 100%);
     color: var(--text-main);
@@ -871,24 +865,26 @@ tbody tr:last-child td:last-child {
     padding: 0 12px;
     cursor: pointer;
     font-family: inherit;
-    box-shadow: 0 2px 5px rgba(20,38,56,0.08), inset 0 1px 0 rgba(255,255,255,0.8);
+    box-shadow: 0 1px 4px rgba(20,38,56,0.09);
     transition: background 0.12s ease, box-shadow 0.12s ease;
 }
 
 .wind-popup-action-btn:hover {
     background: linear-gradient(160deg, #e8f2fa 0%, #d8e9f5 100%);
-    box-shadow: 0 4px 8px rgba(20,38,56,0.10), inset 0 1px 0 rgba(255,255,255,0.9);
+    box-shadow: 0 2px 8px rgba(20,38,56,0.11);
 }
 
 .wind-popup-action-btn.primary {
-    background: linear-gradient(160deg, #e0effa 0%, #c8e0f5 100%);
-    color: var(--accent-strong);
-    border-color: rgba(31,111,170,0.22);
+    background: linear-gradient(160deg, #5f96c8 0%, #377eb8 100%);
+    color: #ffffff;
+    border-color: rgba(31,111,170,0.30);
     font-weight: 800;
+    box-shadow: 0 1px 4px rgba(20,56,100,0.16);
 }
 
 .wind-popup-action-btn.primary:hover {
-    background: linear-gradient(160deg, #d0e8f8 0%, #b8d4ef 100%);
+    background: linear-gradient(160deg, #6fa3d0 0%, #4489c0 100%);
+    box-shadow: 0 2px 8px rgba(20,56,100,0.20);
 }
 
 .wind-barb-wrap {
@@ -1111,7 +1107,8 @@ tbody tr:last-child td:last-child {
 
     input[type="number"],
     input[type="time"],
-    input[type="text"] {
+    input[type="text"],
+    input[type="date"] {
         min-width: 0;
         max-width: 100%;
         font-size: 16px;
@@ -1362,42 +1359,34 @@ tbody tr:last-child td:last-child {
     grid-row: 2;
 }
 
+.form-grid-route-setup .form-field-destination {
+    grid-column: 2;
+    grid-row: 2;
+}
+
 .form-grid-route-setup .form-field-departure-date {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 3;
 }
 
 .form-grid-route-setup .form-field-departure-time {
-    grid-column: 2;
-    grid-row: 3;
+    grid-column: 1 / -1;
+    grid-row: 4;
 }
 
 .form-grid-route-setup .form-field-live-tide {
-    grid-column: 1;
-    grid-row: 4;
+    grid-column: 1 / -1;
+    grid-row: 5;
 }
 
-.form-grid-route-setup .form-field-destination {
-    grid-column: 2;
-    grid-row: 4;
-}
-
-.form-grid-route-setup .form-field-start-location,
-.form-grid-route-setup .form-field-destination {
-    grid-column: 2;
-}
-
-.form-grid-route-setup .form-field-start-location {
-    grid-row: 2;
-}
-
-input[type="date"],
-input[type="time"] {
-    width: 100%;
-    min-width: 0;
-}
 
 @media (max-width: 700px) {
+    input[type="date"],
+    input[type="time"] {
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
     .form-grid-route-setup {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         column-gap: 10px;
@@ -1409,29 +1398,34 @@ input[type="time"] {
         grid-row: 1;
     }
 
-    .form-grid-route-setup .form-field-start-location {
+    .form-grid-route-setup .form-field-leeway {
         grid-column: 2;
         grid-row: 1;
     }
 
-    .form-grid-route-setup .form-field-departure-date {
+    .form-grid-route-setup .form-field-start-location {
         grid-column: 1;
         grid-row: 2;
-    }
-
-    .form-grid-route-setup .form-field-departure-time {
-        grid-column: 2;
-        grid-row: 2;
-    }
-
-    .form-grid-route-setup .form-field-live-tide {
-        grid-column: 1;
-        grid-row: 3;
     }
 
     .form-grid-route-setup .form-field-destination {
         grid-column: 2;
+        grid-row: 2;
+    }
+
+    .form-grid-route-setup .form-field-departure-date {
+        grid-column: 1 / -1;
         grid-row: 3;
+    }
+
+    .form-grid-route-setup .form-field-departure-time {
+        grid-column: 1 / -1;
+        grid-row: 4;
+    }
+
+    .form-grid-route-setup .form-field-live-tide {
+        grid-column: 1 / -1;
+        grid-row: 5;
     }
 }
 
@@ -1737,20 +1731,7 @@ input[type="time"] {
     white-space: nowrap;
 }
 
-.route-mode-badge {
-    position: absolute;
-    top: 96px;
-    left: var(--route-badge-left);
-    z-index: 1180;
-    max-width: min(220px, calc(100vw - 28px));
-    padding: 9px 11px;
-    border-radius: 16px;
-    background: rgba(23,50,71,0.9);
-    color: #ffffff;
-    box-shadow: 0 8px 18px rgba(16,35,51,0.14);
-    backdrop-filter: blur(8px);
-}
-
+.route-mode-badge,
 .route-mode-badge.hidden {
     display: none;
 }
@@ -2030,13 +2011,13 @@ input[type="time"] {
 .summary-chip-edit .summary-action-btn {
     background: linear-gradient(135deg, #5f96c8, #377eb8);
     color: #ffffff;
-    box-shadow: 0 8px 18px rgba(49,119,173,0.18);
+    box-shadow: 0 2px 8px rgba(49,119,173,0.18);
 }
 
 body.route-editing .summary-chip-edit .summary-action-btn {
     background: linear-gradient(135deg, #ff9639, #ff7b00);
     color: #ffffff;
-    box-shadow: 0 8px 18px rgba(255,123,0,0.20);
+    box-shadow: 0 2px 8px rgba(255,123,0,0.18);
 }
 
 .summary-chip-delete .summary-action-btn:not(:disabled) {
@@ -2080,11 +2061,6 @@ body.route-editing .summary-chip-edit .summary-action-btn {
     box-shadow: 0 16px 34px rgba(25,42,60,0.14), 0 0 0 4px rgba(255,123,0,0.08) !important;
 }
 
-.wind-popup-action-btn.primary,
-.popup-editor-apply {
-    background: linear-gradient(135deg, #5f96c8, #377eb8);
-    color: #ffffff;
-}
 
 .popup-editor-group {
     border-color: rgba(203, 219, 231, 0.95);
@@ -2162,6 +2138,11 @@ body.route-editing .summary-chip-edit .summary-action-btn {
         white-space: normal;
         line-height: 1.2;
         text-align: center;
+    }
+
+    .route-mode-badge,
+    .route-mode-badge.hidden {
+        display: none;
     }
 
     /* Info popup: right half of screen only */
