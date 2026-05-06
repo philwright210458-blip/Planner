@@ -59,10 +59,6 @@ const launchSplash = document.getElementById('launchSplash');
 
 const boatSpeedInput = document.getElementById('boatSpeed');
 const leewayInput = document.getElementById('leeway');
-const defaultWindDirInput = document.getElementById('defaultWindDir');
-const defaultWindSpeedInput = document.getElementById('defaultWindSpeed');
-const defaultTideDirInput = document.getElementById('defaultTideDir');
-const defaultTideSpeedInput = document.getElementById('defaultTideSpeed');
 const startLocationInput = document.getElementById('startLocation');
 const destinationInput = document.getElementById('destination');
 const departureDateInput = document.getElementById('departureDateInput');
@@ -585,10 +581,6 @@ function buildRouteSnapshot() {
         perLegTide,
         defaults: {
             ...defaults,
-            windDir: Number(defaultWindDirInput?.value ?? defaults.windDir),
-            windSpeed: Number(defaultWindSpeedInput?.value ?? defaults.windSpeed),
-            tideDir: Number(defaultTideDirInput?.value ?? defaults.tideDir),
-            tideSpeed: Number(defaultTideSpeedInput?.value ?? defaults.tideSpeed),
             startLocation: startLocationInput?.value || '',
             destination: destinationInput?.value || ''
         },
@@ -762,10 +754,6 @@ function applyRouteSnapshot(routeSnapshot) {
     defaults.startLocation = savedDefaults.startLocation || '';
     defaults.destination = savedDefaults.destination || '';
 
-    if (defaultWindDirInput) defaultWindDirInput.value = String(defaults.windDir);
-    if (defaultWindSpeedInput) defaultWindSpeedInput.value = String(defaults.windSpeed);
-    if (defaultTideDirInput) defaultTideDirInput.value = String(defaults.tideDir);
-    if (defaultTideSpeedInput) defaultTideSpeedInput.value = String(defaults.tideSpeed);
     if (startLocationInput) startLocationInput.value = defaults.startLocation;
     if (destinationInput) destinationInput.value = defaults.destination;
     windInputSource = 'manual';
@@ -1831,19 +1819,8 @@ function updateSummary(totalDistance, totalHours) {
 }
 
 function updateDefaultsFromSettings() {
-    const windDir = parseFloat(defaultWindDirInput?.value);
-    const windSpeed = parseFloat(defaultWindSpeedInput?.value);
-    const tideDir = parseFloat(defaultTideDirInput?.value);
-    const tideSpeed = parseFloat(defaultTideSpeedInput?.value);
-
-    defaults.windDir = Number.isFinite(windDir) ? normaliseDeg(windDir) : 180;
-    defaults.windSpeed = Number.isFinite(windSpeed) ? windSpeed : 15;
-    defaults.tideDir = Number.isFinite(tideDir) ? normaliseDeg(tideDir) : 0;
-    defaults.tideSpeed = Number.isFinite(tideSpeed) ? tideSpeed : 1;
     defaults.startLocation = startLocationInput?.value || '';
     defaults.destination = destinationInput?.value || '';
-    windInputSource = 'manual';
-    tideInputSource = 'manual';
 
     updateRoute();
 }
@@ -1873,9 +1850,6 @@ async function applyLiveWind() {
         if (!Number.isFinite(windSpeed) || !Number.isFinite(windDir)) {
             throw new Error('Wind data missing');
         }
-
-        if (defaultWindDirInput) defaultWindDirInput.value = String(Math.round(windDir));
-        if (defaultWindSpeedInput) defaultWindSpeedInput.value = windSpeed.toFixed(1);
 
         defaults.windDir = Math.round(windDir);
         defaults.windSpeed = Number(windSpeed.toFixed(1));
@@ -1935,9 +1909,6 @@ async function applyLiveTide() {
         if (!Number.isFinite(tideSpeed) || !Number.isFinite(tideDir)) {
             throw new Error('Tide current data missing');
         }
-
-        if (defaultTideDirInput) defaultTideDirInput.value = String(Math.round(tideDir));
-        if (defaultTideSpeedInput) defaultTideSpeedInput.value = tideSpeed.toFixed(1);
 
         defaults.tideDir = Math.round(tideDir);
         defaults.tideSpeed = Number(tideSpeed.toFixed(1));
@@ -2524,10 +2495,6 @@ if (autoSplitLegsInput) {
 
 if (boatSpeedInput) boatSpeedInput.addEventListener('input', updateRoute);
 if (leewayInput) leewayInput.addEventListener('input', updateRoute);
-if (defaultWindDirInput) defaultWindDirInput.addEventListener('input', updateDefaultsFromSettings);
-if (defaultWindSpeedInput) defaultWindSpeedInput.addEventListener('input', updateDefaultsFromSettings);
-if (defaultTideDirInput) defaultTideDirInput.addEventListener('input', updateDefaultsFromSettings);
-if (defaultTideSpeedInput) defaultTideSpeedInput.addEventListener('input', updateDefaultsFromSettings);
 if (startLocationInput) startLocationInput.addEventListener('input', updateDefaultsFromSettings);
 if (destinationInput) destinationInput.addEventListener('input', updateDefaultsFromSettings);
 
