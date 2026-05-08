@@ -2170,3 +2170,229 @@ body.route-editing .summary-chip-edit .summary-action-btn {
         z-index: 1350 !important;
     }
 }
+
+
+/* ============================================================
+   TRIAL / SUBSCRIPTION SCREENS
+   ============================================================ */
+
+.trial-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1700;
+    background: #edf2f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 16px;
+    overflow-y: auto;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.trial-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.trial-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 32px 24px 28px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 12px 32px rgba(20,38,56,0.14), 0 2px 6px rgba(20,38,56,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.trial-logo {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    object-fit: contain;
+    margin-bottom: 14px;
+}
+
+.trial-app-name {
+    font-family: Arial, sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: #173247;
+    text-align: center;
+    letter-spacing: -0.3px;
+    line-height: 1.15;
+}
+
+.trial-app-sub {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4d8fc4;
+    text-align: center;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.trial-tagline {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    color: #5d7a8d;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.trial-paywall-sub {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    color: #5d7a8d;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.trial-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 22px 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.trial-feature-list li {
+    font-family: Arial, sans-serif;
+    font-size: 13.5px;
+    color: #1c2e3d;
+    padding-left: 22px;
+    position: relative;
+    line-height: 1.4;
+}
+
+.trial-feature-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 5px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4d8fc4;
+}
+
+.trial-btn-primary {
+    width: 100%;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(160deg, #1f6faa 0%, #155490 100%);
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(20,60,100,0.28);
+    margin-bottom: 12px;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.trial-btn-primary:active {
+    opacity: 0.88;
+    transform: scale(0.98);
+}
+
+.trial-terms {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    color: #8fa4b3;
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.trial-btn-link {
+    background: none;
+    border: none;
+    color: #4d8fc4;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 4px 0;
+}
+
+.trial-plans {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.trial-plan-card {
+    border: 1.5px solid #d4dde6;
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    position: relative;
+    background: #f4f8fb;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.trial-plan-card.trial-plan-selected {
+    border-color: #4d8fc4;
+    background: #e8f2fb;
+}
+
+.trial-plan-badge {
+    position: absolute;
+    top: -10px;
+    left: 14px;
+    background: #ff7b00;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.trial-plan-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.trial-plan-name {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1c2e3d;
+}
+
+.trial-plan-note {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    color: #8fa4b3;
+    margin-top: 2px;
+}
+
+.trial-plan-price {
+    font-family: Arial, sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: #1f6faa;
+}
+
+.trial-plan-price span {
+    font-size: 12px;
+    font-weight: 400;
+    color: #8fa4b3;
+}

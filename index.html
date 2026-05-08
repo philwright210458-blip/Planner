@@ -1,4 +1,4 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -18,6 +18,86 @@
     <meta name="theme-color" content="#ffffff">
 </head>
 <body>
+
+    <!-- ============================================================
+         TRIAL / SUBSCRIPTION SCREENS
+         Sit above the splash (z-index 1700). Managed by trial
+         logic at the bottom of app.js.
+         ============================================================ -->
+
+    <!-- Screen 1: Welcome (shown to brand-new users only) -->
+    <div id="trialWelcomeScreen" class="trial-overlay hidden" aria-hidden="true">
+        <div class="trial-card">
+            <img src="icon.png" class="trial-logo" alt="Sailing Course to Steer">
+            <div class="trial-app-name">Sailing</div>
+            <div class="trial-app-sub">Course to Steer</div>
+            <div class="trial-tagline">Plan your passage. Know your tide.</div>
+
+            <ul class="trial-feature-list">
+                <li>Interactive nautical chart with route planning</li>
+                <li>Tidal atlas &amp; live tide data</li>
+                <li>Live wind overlays</li>
+                <li>Course to steer with leeway &amp; tidal correction</li>
+                <li>Save &amp; load multiple routes</li>
+                <li>No adverts. Ever.</li>
+            </ul>
+
+            <button id="trialStartBtn" class="trial-btn-primary" type="button">
+                Start 14-Day Free Trial
+            </button>
+            <div class="trial-terms">
+                Full access for 14 days &mdash; no payment needed today.<br>
+                After your trial: &pound;11.99/year or &pound;1.99/month.
+            </div>
+            <button id="trialRestoreBtn" class="trial-btn-link" type="button">
+                Already subscribed? Restore purchase
+            </button>
+        </div>
+    </div>
+
+    <!-- Screen 2: Paywall (shown when trial has expired) -->
+    <div id="trialPaywallScreen" class="trial-overlay hidden" aria-hidden="true">
+        <div class="trial-card">
+            <img src="icon.png" class="trial-logo" alt="Sailing Course to Steer">
+            <div class="trial-app-name">Your free trial has ended</div>
+            <div class="trial-paywall-sub">Choose a plan to keep sailing</div>
+
+            <div class="trial-plans">
+                <div class="trial-plan-card trial-plan-selected" id="planAnnual" role="button" tabindex="0" aria-pressed="true">
+                    <div class="trial-plan-badge">Best value</div>
+                    <div class="trial-plan-row">
+                        <div>
+                            <div class="trial-plan-name">Annual</div>
+                            <div class="trial-plan-note">Billed once a year</div>
+                        </div>
+                        <div class="trial-plan-price">&pound;11.99<span>/yr</span></div>
+                    </div>
+                </div>
+
+                <div class="trial-plan-card" id="planMonthly" role="button" tabindex="0" aria-pressed="false">
+                    <div class="trial-plan-row">
+                        <div>
+                            <div class="trial-plan-name">Monthly</div>
+                            <div class="trial-plan-note">Cancel anytime</div>
+                        </div>
+                        <div class="trial-plan-price">&pound;1.99<span>/mo</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="trialSubscribeBtn" class="trial-btn-primary" type="button">
+                Subscribe Now
+            </button>
+            <button id="paywallRestoreBtn" class="trial-btn-link" type="button">
+                Restore previous purchase
+            </button>
+            <div class="trial-terms">
+                Billed via Google Play &middot; Cancel anytime in your Google Play account
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
 
     <div id="launchSplash" class="launch-splash" aria-hidden="true">
         <img src="icon-splash.png" class="splash-image" alt="Sailing Planner app is loading">
@@ -60,7 +140,6 @@
                     </button>
 
                     <div id="actionMenu" class="action-menu hidden" aria-hidden="true">
-                        <button class="action-menu-item" id="actionMenuCurrentLocation" type="button">Use current location</button>
                         <button class="action-menu-item" id="actionMenuLiveWind" type="button">Live Wind</button>
                         <button class="action-menu-item" id="actionMenuLiveTide" type="button">Live Tide (now)</button>
                         <button class="action-menu-item" id="actionMenuTidalAtlas" type="button">Tidal Atlas for Route</button>

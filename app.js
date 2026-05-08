@@ -1,6 +1,15 @@
 const map = L.map('map', {
     zoomControl: false
-}).setView([54.69, -1.2], 10);
+}).setView([54.0, -3.0], 6);
+
+(function initMapToLocation() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+        (pos) => { map.setView([pos.coords.latitude, pos.coords.longitude], 12); },
+        () => {},
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
+    );
+})();
 
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     subdomains: 'abcd',
@@ -66,7 +75,6 @@ const departureTimeInput = document.getElementById('departureTimeInput');
 const autoSplitLegsInput = document.getElementById('autoSplitLegs');
 const actionMenuBtn = document.getElementById('actionMenuBtn');
 const actionMenu = document.getElementById('actionMenu');
-const actionMenuCurrentLocation = document.getElementById('actionMenuCurrentLocation');
 const actionMenuLiveWind = document.getElementById('actionMenuLiveWind');
 const actionMenuLiveTide = document.getElementById('actionMenuLiveTide');
 const actionMenuTidalAtlas = document.getElementById('actionMenuTidalAtlas');
@@ -879,33 +887,6 @@ function toggleActionMenu() {
     }
 }
 
-function useLocation() {
-    if (!navigator.geolocation) {
-        showToast('Geolocation is not supported by this browser.');
-        return;
-    }
-    closeActionMenu();
-    showToast('Finding your location…');
-    navigator.geolocation.getCurrentPosition(
-        (pos) => {
-            map.setView([pos.coords.latitude, pos.coords.longitude], 12);
-            showToast('Map centred on your location.');
-        },
-        (err) => {
-            const msgs = {
-                1: 'Location access was denied. Check your browser or device settings.',
-                2: 'Your location could not be determined. Try again.',
-                3: 'Location request timed out. Try again.'
-            };
-            showToast(msgs[err.code] || 'Could not get your location.');
-        },
-        {
-            enableHighAccuracy: true,
-            timeout: 12000,
-            maximumAge: 30000
-        }
-    );
-}
 
 function setInfoCardSideFromLatLng() {
     if (!mapInfoCard) return;
@@ -2468,7 +2449,6 @@ window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 
 if (actionMenuBtn) actionMenuBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleActionMenu(); });
-if (actionMenuCurrentLocation) actionMenuCurrentLocation.addEventListener('click', () => { useLocation(); closeActionMenu(); });
 if (actionMenuLiveWind) actionMenuLiveWind.addEventListener('click', async () => { closeActionMenu(); await applyLiveWind(); });
 if (actionMenuLiveTide) actionMenuLiveTide.addEventListener('click', async () => { closeActionMenu(); await applyLiveTide(); });
 if (actionMenuTidalAtlas) actionMenuTidalAtlas.addEventListener('click', () => fetchTidalAtlasForRoute());
@@ -2536,3 +2516,188 @@ registerServiceWorker();
 initLaunchSplash();
 updateDefaultsFromSettings();
 updateRouteEditUI();
+/* ============================================================
+   TRIAL / SUBSCRIPTION LOGIC
+   ============================================================
+
+   HOW IT WORKS:
+   - First ever launch     → Welcome screen shown
+   - Trial active (< 14d) → App loads normally
+   - Trial expired         → Paywall screen shown
+   - Subscribed            → App loads normally
+
+   localStorage keys:
+     sailing_trial_start  — timestamp (ms) when trial began
+     sailing_subscribed   — 'true' if user has subscribed
+
+   NOTE ON PAYMENT:
+   The Subscribe button uses a confirm() dialog for testing.
+   When publishing on Google Play via a TWA (Trusted Web Activity),
+   replace the body of handleSubscribe() with your Google Play
+   Billing / Digital Goods API code.
+   ============================================================ */
+
+(function initTrialSystem() {
+
+    const TRIAL_START_KEY = 'sailing_trial_start';
+    const SUBSCRIBED_KEY  = 'sailing_subscribed';
+    const TRIAL_DAYS      = 14;
+
+    // ── Helpers ──────────────────────────────────────────────
+
+    function isSubscribed() {
+        return localStorage.getItem(SUBSCRIBED_KEY) === 'true';
+    }
+
+    function getTrialStatus() {
+        if (isSubscribed()) return 'subscribed';
+        const start = localStorage.getItem(TRIAL_START_KEY);
+        if (!start) return 'new';
+        const daysSince = (Date.now() - parseInt(start, 10)) / (1000 * 60 * 60 * 24);
+        return daysSince < TRIAL_DAYS ? 'trial_active' : 'trial_expired';
+    }
+
+    function startTrial() {
+        localStorage.setItem(TRIAL_START_KEY, Date.now().toString());
+    }
+
+    function markSubscribed() {
+        localStorage.setItem(SUBSCRIBED_KEY, 'true');
+    }
+
+    function daysRemaining() {
+        const start = localStorage.getItem(TRIAL_START_KEY);
+        if (!start) return TRIAL_DAYS;
+        const elapsed = (Date.now() - parseInt(start, 10)) / (1000 * 60 * 60 * 24);
+        return Math.max(0, Math.ceil(TRIAL_DAYS - elapsed));
+    }
+
+    function dismissOverlay(overlayId) {
+        const el = document.getElementById(overlayId);
+        if (el) {
+            el.classList.add('hidden');
+            el.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    // ── Plan selection ────────────────────────────────────────
+
+    let selectedPlan = 'annual';
+
+    function selectPlan(plan) {
+        selectedPlan = plan;
+        const annualCard  = document.getElementById('planAnnual');
+        const monthlyCard = document.getElementById('planMonthly');
+        if (annualCard) {
+            annualCard.classList.toggle('trial-plan-selected', plan === 'annual');
+            annualCard.setAttribute('aria-pressed', plan === 'annual' ? 'true' : 'false');
+        }
+        if (monthlyCard) {
+            monthlyCard.classList.toggle('trial-plan-selected', plan === 'monthly');
+            monthlyCard.setAttribute('aria-pressed', plan === 'monthly' ? 'true' : 'false');
+        }
+    }
+
+    // ── Screen: Welcome ───────────────────────────────────────
+
+    function showWelcomeScreen() {
+        const screen = document.getElementById('trialWelcomeScreen');
+        if (!screen) return;
+        screen.classList.remove('hidden');
+        screen.setAttribute('aria-hidden', 'false');
+
+        const startBtn = document.getElementById('trialStartBtn');
+        if (startBtn) {
+            startBtn.addEventListener('click', function () {
+                startTrial();
+                dismissOverlay('trialWelcomeScreen');
+                // The existing splash screen takes over from here as normal
+            });
+        }
+
+        const restoreBtn = document.getElementById('trialRestoreBtn');
+        if (restoreBtn) {
+            restoreBtn.addEventListener('click', function () {
+                handleRestorePurchase('trialWelcomeScreen');
+            });
+        }
+    }
+
+    // ── Screen: Paywall ───────────────────────────────────────
+
+    function showPaywallScreen() {
+        const screen = document.getElementById('trialPaywallScreen');
+        if (!screen) return;
+        screen.classList.remove('hidden');
+        screen.setAttribute('aria-hidden', 'false');
+
+        const annualCard  = document.getElementById('planAnnual');
+        const monthlyCard = document.getElementById('planMonthly');
+        if (annualCard)  annualCard.addEventListener('click',  () => selectPlan('annual'));
+        if (monthlyCard) monthlyCard.addEventListener('click', () => selectPlan('monthly'));
+        if (annualCard)  annualCard.addEventListener('keydown',  (e) => { if (e.key === 'Enter' || e.key === ' ') selectPlan('annual'); });
+        if (monthlyCard) monthlyCard.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') selectPlan('monthly'); });
+
+        const subscribeBtn = document.getElementById('trialSubscribeBtn');
+        if (subscribeBtn) {
+            subscribeBtn.addEventListener('click', function () {
+                handleSubscribe(selectedPlan);
+            });
+        }
+
+        const restoreBtn = document.getElementById('paywallRestoreBtn');
+        if (restoreBtn) {
+            restoreBtn.addEventListener('click', function () {
+                handleRestorePurchase('trialPaywallScreen');
+            });
+        }
+    }
+
+    // ── Payment handlers (placeholders) ──────────────────────
+    // Replace handleSubscribe() with Google Play Billing code
+    // when you are ready to publish.
+
+    function handleSubscribe(plan) {
+        const priceText = plan === 'annual' ? '£11.99/year' : '£1.99/month';
+        const confirmed = confirm(
+            'Subscribe for ' + priceText + '?\n\n' +
+            'In the published app this opens Google Play Billing.\n' +
+            'Tap OK to simulate a successful subscription for testing.'
+        );
+        if (confirmed) {
+            markSubscribed();
+            dismissOverlay('trialPaywallScreen');
+            showToast('Subscription activated — welcome aboard!');
+        }
+    }
+
+    function handleRestorePurchase(overlayId) {
+        const found = confirm(
+            'Restore purchase?\n\n' +
+            'In the published app this checks your Google Play account.\n' +
+            'Tap OK to simulate a successful restore for testing.'
+        );
+        if (found) {
+            markSubscribed();
+            dismissOverlay(overlayId);
+            showToast('Purchase restored — welcome back!');
+        }
+    }
+
+    // ── Entry point ───────────────────────────────────────────
+
+    const status = getTrialStatus();
+
+    if (status === 'new') {
+        showWelcomeScreen();
+    } else if (status === 'trial_expired') {
+        showPaywallScreen();
+    }
+    // 'trial_active' and 'subscribed' → nothing to do, app runs normally
+
+    console.log(
+        '[Trial] Status:', status,
+        status === 'trial_active' ? '(' + daysRemaining() + ' days remaining)' : ''
+    );
+
+})();
