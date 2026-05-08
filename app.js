@@ -1103,10 +1103,19 @@ function applyPopupConditionChanges(sourceSegmentIndex) {
     const leg = editLegIndex >= 0 ? currentLegData[editLegIndex] : null;
     if (!leg) return;
 
-    setLegConditionValue('wind', leg.key, 'dir', document.getElementById('popupWindDir')?.value);
-    setLegConditionValue('wind', leg.key, 'speed', document.getElementById('popupWindSpeed')?.value);
-    setLegConditionValue('tide', leg.key, 'dir', document.getElementById('popupTideDir')?.value);
-    setLegConditionValue('tide', leg.key, 'speed', document.getElementById('popupTideSpeed')?.value);
+    const windDir = document.getElementById('popupWindDir')?.value;
+    const windSpeed = document.getElementById('popupWindSpeed')?.value;
+    const tideDir = document.getElementById('popupTideDir')?.value;
+    const tideSpeed = document.getElementById('popupTideSpeed')?.value;
+
+    // Apply to all chunks of this source segment so the averaged display stays consistent
+    const familyLegs = getFamilyLegData(sourceSegmentIndex);
+    for (const familyLeg of familyLegs) {
+        setLegConditionValue('wind', familyLeg.key, 'dir', windDir);
+        setLegConditionValue('wind', familyLeg.key, 'speed', windSpeed);
+        setLegConditionValue('tide', familyLeg.key, 'dir', tideDir);
+        setLegConditionValue('tide', familyLeg.key, 'speed', tideSpeed);
+    }
 
     selectedLegIndex = editLegIndex;
     setActiveConditionEditor('wind', leg.key);
@@ -1332,34 +1341,19 @@ function buildLegSegments(displayLegs) {
     });
 }
 
-function buildWindBarbSVG(speed, dir) {
-    const s = Math.max(0, Number(speed) || 0);
-    let remaining = Math.round(s / 5) * 5;
-
-    let svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-      <g transform="translate(24,24) rotate(${dir})">
-        <line x1="0" y1="14" x2="0" y2="-12" stroke="#003049" stroke-width="2"/>
+function buildWindPillHtml(speed, dir) {
+    const s = Math.round(Math.max(0, Number(speed) || 0));
+    return `
+        <div class="wind-pill">
+            <svg width="12" height="12" viewBox="0 0 12 12" style="flex-shrink:0">
+                <g transform="translate(6,6) rotate(${dir})">
+                    <line x1="0" y1="4.5" x2="0" y2="-0.5" stroke="#1a5fa8" stroke-width="1.5" stroke-linecap="round"/>
+                    <polygon points="-2.5,0.5 0,-5.5 2.5,0.5" fill="#1a5fa8"/>
+                </g>
+            </svg>
+            ${s} kt
+        </div>
     `;
-
-    let y = -12;
-
-    while (remaining >= 50) {
-        svg += `<polygon points="0,${y} 12,${y + 4} 0,${y + 8}" fill="#003049"/>`;
-        remaining -= 50;
-        y += 8;
-    }
-    while (remaining >= 10) {
-        svg += `<line x1="0" y1="${y}" x2="12" y2="${y + 4}" stroke="#003049" stroke-width="2"/>`;
-        remaining -= 10;
-        y += 5;
-    }
-    if (remaining >= 5) {
-        svg += `<line x1="0" y1="${y}" x2="7" y2="${y + 2.5}" stroke="#003049" stroke-width="2"/>`;
-    }
-
-    svg += `</g></svg>`;
-    return svg;
 }
 
 function getOffsetBarbLatLng(a, b, legIndex) {
@@ -1370,14 +1364,14 @@ function getOffsetBarbLatLng(a, b, legIndex) {
     const dy = p2.y - p1.y;
     const len = Math.sqrt(dx * dx + dy * dy) || 1;
 
-    const along = Math.min(0.68, Math.max(0.52, len < 90 ? 0.5 : 0.68));
-    const baseX = p1.x + dx * along;
-    const baseY = p1.y + dy * along;
+    // Anchor at the midpoint, same position as the leg arrow marker
+    const baseX = p1.x + dx * 0.5;
+    const baseY = p1.y + dy * 0.5;
 
     const nx = -dy / len;
     const ny = dx / len;
 
-    const offsetPx = len < 70 ? 42 : (len < 120 ? 34 : 26);
+    const offsetPx = 32;
     const side = (legIndex % 2 === 0) ? 1 : -1;
 
     const finalPoint = L.point(
@@ -1395,9 +1389,9 @@ function addWindBarb(latlng, sourceSegmentIndex) {
 
     const icon = L.divIcon({
         className: '',
-        html: `<div class="wind-barb-wrap">${buildWindBarbSVG(first.avgWindSpeed, first.avgWindDir)}</div>`,
-        iconSize: [48, 48],
-        iconAnchor: [24, 24]
+        html: buildWindPillHtml(first.avgWindSpeed, first.avgWindDir),
+        iconSize: [60, 24],
+        iconAnchor: [30, 12]
     });
 
     const marker = L.marker(latlng, { icon, interactive: true }).addTo(map);
@@ -1477,9 +1471,10 @@ function calculateLeg(p1, p2, performancePercent, windDir, windSpeed, tideDir, t
 
 function getChunkWind(sourceSegmentIndex, chunkIndex) {
     const key = makeLegKey(sourceSegmentIndex, chunkIndex);
+    const baseKey = makeLegKey(sourceSegmentIndex, 0);
     return {
-        dir: perLegWind[key]?.dir ?? defaults.windDir,
-        speed: perLegWind[key]?.speed ?? defaults.windSpeed
+        dir: perLegWind[key]?.dir ?? perLegWind[baseKey]?.dir ?? defaults.windDir,
+        speed: perLegWind[key]?.speed ?? perLegWind[baseKey]?.speed ?? defaults.windSpeed
     };
 }
 
