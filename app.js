@@ -2515,26 +2515,9 @@ updateOnlineStatus();
 registerServiceWorker();
 initLaunchSplash();
 updateDefaultsFromSettings();
-updateRouteEditUI();
+
 /* ============================================================
-   TRIAL / SUBSCRIPTION LOGIC
-   ============================================================
-
-   HOW IT WORKS:
-   - First ever launch     → Welcome screen shown
-   - Trial active (< 14d) → App loads normally
-   - Trial expired         → Paywall screen shown
-   - Subscribed            → App loads normally
-
-   localStorage keys:
-     sailing_trial_start  — timestamp (ms) when trial began
-     sailing_subscribed   — 'true' if user has subscribed
-
-   NOTE ON PAYMENT:
-   The Subscribe button uses a confirm() dialog for testing.
-   When publishing on Google Play via a TWA (Trusted Web Activity),
-   replace the body of handleSubscribe() with your Google Play
-   Billing / Digital Goods API code.
+   TRIAL / SUBSCRIPTION SYSTEM
    ============================================================ */
 
 (function initTrialSystem() {
@@ -2542,8 +2525,6 @@ updateRouteEditUI();
     const TRIAL_START_KEY = 'sailing_trial_start';
     const SUBSCRIBED_KEY  = 'sailing_subscribed';
     const TRIAL_DAYS      = 14;
-
-    // ── Helpers ──────────────────────────────────────────────
 
     function isSubscribed() {
         return localStorage.getItem(SUBSCRIBED_KEY) === 'true';
@@ -2568,103 +2549,85 @@ updateRouteEditUI();
     function daysRemaining() {
         const start = localStorage.getItem(TRIAL_START_KEY);
         if (!start) return TRIAL_DAYS;
-        const elapsed = (Date.now() - parseInt(start, 10)) / (1000 * 60 * 60 * 24);
-        return Math.max(0, Math.ceil(TRIAL_DAYS - elapsed));
+        return Math.max(0, Math.ceil(TRIAL_DAYS - (Date.now() - parseInt(start, 10)) / (1000 * 60 * 60 * 24)));
     }
 
     function dismissOverlay(overlayId) {
         const el = document.getElementById(overlayId);
-        if (el) {
-            el.classList.add('hidden');
-            el.setAttribute('aria-hidden', 'true');
-        }
+        if (el) { el.classList.add('hidden'); el.setAttribute('aria-hidden', 'true'); }
     }
 
-    // ── Plan selection ────────────────────────────────────────
+    function showOverlay(overlayId) {
+        const el = document.getElementById(overlayId);
+        if (el) { el.classList.remove('hidden'); el.setAttribute('aria-hidden', 'false'); }
+    }
 
     let selectedPlan = 'annual';
 
     function selectPlan(plan) {
         selectedPlan = plan;
-        const annualCard  = document.getElementById('planAnnual');
-        const monthlyCard = document.getElementById('planMonthly');
-        if (annualCard) {
-            annualCard.classList.toggle('trial-plan-selected', plan === 'annual');
-            annualCard.setAttribute('aria-pressed', plan === 'annual' ? 'true' : 'false');
-        }
-        if (monthlyCard) {
-            monthlyCard.classList.toggle('trial-plan-selected', plan === 'monthly');
-            monthlyCard.setAttribute('aria-pressed', plan === 'monthly' ? 'true' : 'false');
-        }
+        ['planAnnual', 'planMonthly'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const active = (id === 'planAnnual' && plan === 'annual') || (id === 'planMonthly' && plan === 'monthly');
+            el.classList.toggle('trial-plan-selected', active);
+            el.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
     }
 
-    // ── Screen: Welcome ───────────────────────────────────────
-
     function showWelcomeScreen() {
-        const screen = document.getElementById('trialWelcomeScreen');
-        if (!screen) return;
-        screen.classList.remove('hidden');
-        screen.setAttribute('aria-hidden', 'false');
+        dismissOverlay('trialPaywallScreen');
+        showOverlay('trialWelcomeScreen');
 
         const startBtn = document.getElementById('trialStartBtn');
         if (startBtn) {
-            startBtn.addEventListener('click', function () {
+            const fresh = startBtn.cloneNode(true);
+            startBtn.parentNode.replaceChild(fresh, startBtn);
+            fresh.addEventListener('click', function () {
                 startTrial();
                 dismissOverlay('trialWelcomeScreen');
-                // The existing splash screen takes over from here as normal
             });
         }
 
         const restoreBtn = document.getElementById('trialRestoreBtn');
         if (restoreBtn) {
-            restoreBtn.addEventListener('click', function () {
+            const fresh = restoreBtn.cloneNode(true);
+            restoreBtn.parentNode.replaceChild(fresh, restoreBtn);
+            fresh.addEventListener('click', function () {
                 handleRestorePurchase('trialWelcomeScreen');
             });
         }
     }
 
-    // ── Screen: Paywall ───────────────────────────────────────
-
     function showPaywallScreen() {
-        const screen = document.getElementById('trialPaywallScreen');
-        if (!screen) return;
-        screen.classList.remove('hidden');
-        screen.setAttribute('aria-hidden', 'false');
+        dismissOverlay('trialWelcomeScreen');
+        showOverlay('trialPaywallScreen');
 
         const annualCard  = document.getElementById('planAnnual');
         const monthlyCard = document.getElementById('planMonthly');
-        if (annualCard)  annualCard.addEventListener('click',  () => selectPlan('annual'));
-        if (monthlyCard) monthlyCard.addEventListener('click', () => selectPlan('monthly'));
-        if (annualCard)  annualCard.addEventListener('keydown',  (e) => { if (e.key === 'Enter' || e.key === ' ') selectPlan('annual'); });
-        if (monthlyCard) monthlyCard.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') selectPlan('monthly'); });
+        if (annualCard)  annualCard.addEventListener('click',   () => selectPlan('annual'));
+        if (monthlyCard) monthlyCard.addEventListener('click',  () => selectPlan('monthly'));
+        if (annualCard)  annualCard.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') selectPlan('annual'); });
+        if (monthlyCard) monthlyCard.addEventListener('keydown',(e) => { if (e.key === 'Enter' || e.key === ' ') selectPlan('monthly'); });
 
         const subscribeBtn = document.getElementById('trialSubscribeBtn');
         if (subscribeBtn) {
-            subscribeBtn.addEventListener('click', function () {
-                handleSubscribe(selectedPlan);
-            });
+            const fresh = subscribeBtn.cloneNode(true);
+            subscribeBtn.parentNode.replaceChild(fresh, subscribeBtn);
+            fresh.addEventListener('click', () => handleSubscribe(selectedPlan));
         }
 
         const restoreBtn = document.getElementById('paywallRestoreBtn');
         if (restoreBtn) {
-            restoreBtn.addEventListener('click', function () {
-                handleRestorePurchase('trialPaywallScreen');
-            });
+            const fresh = restoreBtn.cloneNode(true);
+            restoreBtn.parentNode.replaceChild(fresh, restoreBtn);
+            fresh.addEventListener('click', () => handleRestorePurchase('trialPaywallScreen'));
         }
     }
 
-    // ── Payment handlers (placeholders) ──────────────────────
-    // Replace handleSubscribe() with Google Play Billing code
-    // when you are ready to publish.
-
     function handleSubscribe(plan) {
-        const priceText = plan === 'annual' ? '£11.99/year' : '£1.99/month';
-        const confirmed = confirm(
-            'Subscribe for ' + priceText + '?\n\n' +
-            'In the published app this opens Google Play Billing.\n' +
-            'Tap OK to simulate a successful subscription for testing.'
-        );
-        if (confirmed) {
+        const price = plan === 'annual' ? '£11.99/year' : '£1.99/month';
+        if (confirm('Subscribe for ' + price + '?\n\nTap OK to simulate a successful subscription for testing.')) {
             markSubscribed();
             dismissOverlay('trialPaywallScreen');
             showToast('Subscription activated — welcome aboard!');
@@ -2672,32 +2635,84 @@ updateRouteEditUI();
     }
 
     function handleRestorePurchase(overlayId) {
-        const found = confirm(
-            'Restore purchase?\n\n' +
-            'In the published app this checks your Google Play account.\n' +
-            'Tap OK to simulate a successful restore for testing.'
-        );
-        if (found) {
+        if (confirm('Restore purchase?\n\nTap OK to simulate a successful restore for testing.')) {
             markSubscribed();
             dismissOverlay(overlayId);
             showToast('Purchase restored — welcome back!');
         }
     }
 
-    // ── Entry point ───────────────────────────────────────────
+    /* ----------------------------------------------------------
+       DEV TEST PANEL
+       Floating buttons so you can switch screens without
+       touching the URL. Remove this block before publishing.
+       ---------------------------------------------------------- */
+    function buildDevPanel() {
+        const panel = document.createElement('div');
+        panel.id = 'trialDevPanel';
+        panel.innerHTML = `
+            <div style="
+                position:fixed;bottom:12px;right:12px;z-index:9999;
+                background:#1c2e3d;border-radius:12px;padding:8px 10px;
+                display:flex;flex-direction:column;gap:6px;
+                box-shadow:0 4px 16px rgba(0,0,0,0.4);
+                font-family:Arial,sans-serif;
+            ">
+                <div style="font-size:9px;font-weight:800;color:#8fa4b3;
+                    letter-spacing:1px;text-transform:uppercase;text-align:center;
+                    margin-bottom:2px;">
+                    Dev testing — remove before publish
+                </div>
+                <button id="devBtnNew"        style="${btnStyle('#4d8fc4')}">Welcome screen</button>
+                <button id="devBtnExpired"    style="${btnStyle('#e07b30')}">Paywall screen</button>
+                <button id="devBtnSubscribed" style="${btnStyle('#3a8a5a')}">Subscribed (no screen)</button>
+                <button id="devBtnClear"      style="${btnStyle('#8fa4b3')}">Clear all / reset</button>
+            </div>
+        `;
+        document.body.appendChild(panel);
 
-    const status = getTrialStatus();
-
-    if (status === 'new') {
-        showWelcomeScreen();
-    } else if (status === 'trial_expired') {
-        showPaywallScreen();
+        document.getElementById('devBtnNew').addEventListener('click', function () {
+            localStorage.removeItem(TRIAL_START_KEY);
+            localStorage.removeItem(SUBSCRIBED_KEY);
+            showWelcomeScreen();
+        });
+        document.getElementById('devBtnExpired').addEventListener('click', function () {
+            localStorage.setItem(TRIAL_START_KEY, String(Date.now() - 15 * 24 * 60 * 60 * 1000));
+            localStorage.removeItem(SUBSCRIBED_KEY);
+            showPaywallScreen();
+        });
+        document.getElementById('devBtnSubscribed').addEventListener('click', function () {
+            localStorage.setItem(SUBSCRIBED_KEY, 'true');
+            dismissOverlay('trialWelcomeScreen');
+            dismissOverlay('trialPaywallScreen');
+            showToast('Set to subscribed — no screens will show.');
+        });
+        document.getElementById('devBtnClear').addEventListener('click', function () {
+            localStorage.removeItem(TRIAL_START_KEY);
+            localStorage.removeItem(SUBSCRIBED_KEY);
+            dismissOverlay('trialWelcomeScreen');
+            dismissOverlay('trialPaywallScreen');
+            showToast('Trial data cleared.');
+        });
     }
-    // 'trial_active' and 'subscribed' → nothing to do, app runs normally
 
-    console.log(
-        '[Trial] Status:', status,
-        status === 'trial_active' ? '(' + daysRemaining() + ' days remaining)' : ''
-    );
+    function btnStyle(color) {
+        return `background:${color};border:none;border-radius:7px;color:#fff;
+            font-family:Arial,sans-serif;font-size:11px;font-weight:700;
+            padding:7px 10px;cursor:pointer;text-align:left;`;
+    }
+    /* ----------------------------------------------------------
+       END DEV TEST PANEL
+       ---------------------------------------------------------- */
+
+    // Show the right screen on load
+    const status = getTrialStatus();
+    if (status === 'new') showWelcomeScreen();
+    else if (status === 'trial_expired') showPaywallScreen();
+
+    console.log('[Trial] Status:', status, status === 'trial_active' ? '(' + daysRemaining() + ' days remaining)' : '');
+
+    // Build the dev panel last so it sits on top of everything
+    buildDevPanel();
 
 })();
