@@ -2642,77 +2642,9 @@ updateDefaultsFromSettings();
         }
     }
 
-    /* ----------------------------------------------------------
-       DEV TEST PANEL
-       Floating buttons so you can switch screens without
-       touching the URL. Remove this block before publishing.
-       ---------------------------------------------------------- */
-    function buildDevPanel() {
-        const panel = document.createElement('div');
-        panel.id = 'trialDevPanel';
-        panel.innerHTML = `
-            <div style="
-                position:fixed;bottom:12px;right:12px;z-index:9999;
-                background:#1c2e3d;border-radius:12px;padding:8px 10px;
-                display:flex;flex-direction:column;gap:6px;
-                box-shadow:0 4px 16px rgba(0,0,0,0.4);
-                font-family:Arial,sans-serif;
-            ">
-                <div style="font-size:9px;font-weight:800;color:#8fa4b3;
-                    letter-spacing:1px;text-transform:uppercase;text-align:center;
-                    margin-bottom:2px;">
-                    Dev testing — remove before publish
-                </div>
-                <button id="devBtnNew"        style="${btnStyle('#4d8fc4')}">Welcome screen</button>
-                <button id="devBtnExpired"    style="${btnStyle('#e07b30')}">Paywall screen</button>
-                <button id="devBtnSubscribed" style="${btnStyle('#3a8a5a')}">Subscribed (no screen)</button>
-                <button id="devBtnClear"      style="${btnStyle('#8fa4b3')}">Clear all / reset</button>
-            </div>
-        `;
-        document.body.appendChild(panel);
-
-        document.getElementById('devBtnNew').addEventListener('click', function () {
-            localStorage.removeItem(TRIAL_START_KEY);
-            localStorage.removeItem(SUBSCRIBED_KEY);
-            showWelcomeScreen();
-        });
-        document.getElementById('devBtnExpired').addEventListener('click', function () {
-            localStorage.setItem(TRIAL_START_KEY, String(Date.now() - 15 * 24 * 60 * 60 * 1000));
-            localStorage.removeItem(SUBSCRIBED_KEY);
-            showPaywallScreen();
-        });
-        document.getElementById('devBtnSubscribed').addEventListener('click', function () {
-            localStorage.setItem(SUBSCRIBED_KEY, 'true');
-            dismissOverlay('trialWelcomeScreen');
-            dismissOverlay('trialPaywallScreen');
-            showToast('Set to subscribed — no screens will show.');
-        });
-        document.getElementById('devBtnClear').addEventListener('click', function () {
-            localStorage.removeItem(TRIAL_START_KEY);
-            localStorage.removeItem(SUBSCRIBED_KEY);
-            dismissOverlay('trialWelcomeScreen');
-            dismissOverlay('trialPaywallScreen');
-            showToast('Trial data cleared.');
-        });
-    }
-
-    function btnStyle(color) {
-        return `background:${color};border:none;border-radius:7px;color:#fff;
-            font-family:Arial,sans-serif;font-size:11px;font-weight:700;
-            padding:7px 10px;cursor:pointer;text-align:left;`;
-    }
-    /* ----------------------------------------------------------
-       END DEV TEST PANEL
-       ---------------------------------------------------------- */
-
     // Show the right screen on load
     const status = getTrialStatus();
     if (status === 'new') showWelcomeScreen();
     else if (status === 'trial_expired') showPaywallScreen();
-
-    console.log('[Trial] Status:', status, status === 'trial_active' ? '(' + daysRemaining() + ' days remaining)' : '');
-
-    // Build the dev panel last so it sits on top of everything
-    buildDevPanel();
 
 })();

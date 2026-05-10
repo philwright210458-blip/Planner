@@ -16,16 +16,6 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#ffffff">
-
-    <script>
-        /* DEV: Force-clears service worker so new files always load.
-           Remove this block before submitting to Google Play. */
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function (regs) {
-                regs.forEach(function (reg) { reg.unregister(); });
-            });
-        }
-    </script>
 </head>
 <body>
 
@@ -118,8 +108,6 @@
     <div id="launchSplash" class="launch-splash" aria-hidden="true">
         <img src="icon-splash.png" class="splash-image" alt="Sailing Planner app is loading">
         <button id="splashContinueBtn" class="splash-continue-btn" type="button" aria-label="Continue to app">Continue</button>
-        <div style="position:absolute;bottom:12px;right:14px;font-size:10px;
-            color:#aaa;font-family:Arial,sans-serif;">v76-trial</div>
     </div>
 
     <!-- Adding a harmless landmark wrapper around main content -->
