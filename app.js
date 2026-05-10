@@ -87,6 +87,14 @@ const saveStormglassKeyBtn = document.getElementById('saveStormglassKeyBtn');
 const clearStormglassKeyBtn = document.getElementById('clearStormglassKeyBtn');
 const toastMessage = document.getElementById('toastMessage');
 const liveTideKeyStatus = document.getElementById('liveTideKeyStatus');
+const legEditorBackdrop = document.getElementById('legEditorBackdrop');
+const legEditorSheet = document.getElementById('legEditorSheet');
+const legEditorClose = document.getElementById('legEditorClose');
+const legEditorCancel = document.getElementById('legEditorCancel');
+const legEditorApply = document.getElementById('legEditorApply');
+const legEditorBody = document.getElementById('legEditorBody');
+const legEditorTitle = document.getElementById('legEditorTitle');
+const legEditorSubtitle = document.getElementById('legEditorSubtitle');
 const savedRoutesBackdrop = document.getElementById('savedRoutesBackdrop');
 const savedRoutesModal = document.getElementById('savedRoutesModal');
 const savedRoutesList = document.getElementById('savedRoutesList');
@@ -1123,6 +1131,81 @@ function clearActiveConditionEditor() {
     activeConditionEditor.kind = null;
 }
 
+function isCompactEditorMode() {
+    return window.matchMedia('(max-width: 767px)').matches;
+}
+
+function getActiveEditorLeg() {
+    if (!activeConditionEditor.key) return null;
+    return currentLegData.find(leg => leg.key === activeConditionEditor.key) || null;
+}
+
+function renderLegEditorFields(leg) {
+    if (!leg) return '';
+    const windSpeedText = Number(leg.windSpeed).toFixed(leg.windSpeed % 1 ? 1 : 0);
+    const tideSpeedText = Number(leg.tideSpeed).toFixed(leg.tideSpeed % 1 ? 1 : 0);
+    return `
+        <div class="leg-editor-grid">
+            <div class="leg-editor-group">
+                <div class="leg-editor-group-title">Wind</div>
+                <label class="leg-editor-label" for="editorWindDir">Direction &deg;</label>
+                <input id="editorWindDir" class="leg-editor-input" type="number" inputmode="numeric" step="1" value="${Math.round(leg.windDir)}">
+                <label class="leg-editor-label" for="editorWindSpeed">Speed kt</label>
+                <input id="editorWindSpeed" class="leg-editor-input" type="number" inputmode="decimal" step="0.1" value="${windSpeedText}">
+            </div>
+            <div class="leg-editor-group">
+                <div class="leg-editor-group-title">Tide</div>
+                <label class="leg-editor-label" for="editorTideDir">Direction &deg;</label>
+                <input id="editorTideDir" class="leg-editor-input" type="number" inputmode="numeric" step="1" value="${Math.round(leg.tideDir)}">
+                <label class="leg-editor-label" for="editorTideSpeed">Speed kt</label>
+                <input id="editorTideSpeed" class="leg-editor-input" type="number" inputmode="decimal" step="0.1" value="${tideSpeedText}">
+            </div>
+        </div>
+    `;
+}
+
+function openLegEditorSheet() {
+    const leg = getActiveEditorLeg();
+    if (!leg || !legEditorSheet || !legEditorBackdrop || !legEditorBody) return;
+    if (legEditorTitle) legEditorTitle.textContent = `Leg ${leg.label} conditions`;
+    if (legEditorSubtitle) legEditorSubtitle.textContent = `Waypoint ${leg.sourceSegmentIndex + 1} → Waypoint ${leg.sourceSegmentIndex + 2} • ${leg.status}`;
+    legEditorBody.innerHTML = renderLegEditorFields(leg);
+    legEditorSheet.classList.remove('hidden');
+    legEditorBackdrop.classList.remove('hidden');
+    legEditorSheet.setAttribute('aria-hidden', 'false');
+    legEditorBackdrop.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => {
+        const input = document.getElementById('editorWindDir');
+        if (input) { input.focus(); input.select(); }
+    });
+}
+
+function closeLegEditorSheet() {
+    if (!legEditorSheet || !legEditorBackdrop) return;
+    legEditorSheet.classList.add('hidden');
+    legEditorBackdrop.classList.add('hidden');
+    legEditorSheet.setAttribute('aria-hidden', 'true');
+    legEditorBackdrop.setAttribute('aria-hidden', 'true');
+}
+
+function applyLegEditorChanges() {
+    const leg = getActiveEditorLeg();
+    if (!leg) return;
+    setLegConditionValue('wind', leg.key, 'dir', document.getElementById('editorWindDir')?.value);
+    setLegConditionValue('wind', leg.key, 'speed', document.getElementById('editorWindSpeed')?.value);
+    setLegConditionValue('tide', leg.key, 'dir', document.getElementById('editorTideDir')?.value);
+    setLegConditionValue('tide', leg.key, 'speed', document.getElementById('editorTideSpeed')?.value);
+    closeLegEditorSheet();
+    clearActiveConditionEditor();
+    updateRoute();
+}
+
+function closeLegEditorFromCard() {
+    clearActiveConditionEditor();
+    closeLegEditorSheet();
+    updateRoute();
+}
+
 function setLegConditionValue(kind, key, type, value) {
     const store = kind === 'wind' ? perLegWind : perLegTide;
     const fallback = kind === 'wind'
@@ -1703,8 +1786,48 @@ function renderTopRouteHeader(totalDistance = null, totalHours = null) {
 
 function renderSelectedLegCard(totalDistance = null, totalHours = null) {
     if (!selectedLegCardContent || !selectedLegCard) return;
-    selectedLegCard.style.display = 'none';
-    selectedLegCardContent.innerHTML = '';
+
+    const leg = getActiveEditorLeg();
+
+    if (!leg || isCompactEditorMode()) {
+        selectedLegCard.style.display = 'none';
+        selectedLegCardContent.innerHTML = '';
+        return;
+    }
+
+    selectedLegCard.style.display = '';
+    selectedLegCardContent.innerHTML = `
+        <div class="selected-leg-card-header">
+            <div>
+                <div class="selected-leg-card-kicker">Edit local conditions</div>
+                <div class="selected-leg-card-title">Leg ${escapeHtml(leg.label)} conditions</div>
+                <div class="selected-leg-card-subtitle">Waypoint ${leg.sourceSegmentIndex + 1} &rarr; Waypoint ${leg.sourceSegmentIndex + 2} &bull; ${leg.status}</div>
+            </div>
+        </div>
+        <div class="selected-leg-metrics">
+            <div class="selected-leg-metric">
+                <div class="selected-leg-metric-label">CTS</div>
+                <div class="selected-leg-metric-value">${leg.cts.toFixed(1)}&deg;</div>
+            </div>
+            <div class="selected-leg-metric">
+                <div class="selected-leg-metric-label">Track</div>
+                <div class="selected-leg-metric-value">${leg.track.toFixed(1)}&deg;</div>
+            </div>
+            <div class="selected-leg-metric">
+                <div class="selected-leg-metric-label">Distance</div>
+                <div class="selected-leg-metric-value">${leg.distance.toFixed(2)} NM</div>
+            </div>
+            <div class="selected-leg-metric">
+                <div class="selected-leg-metric-label">Duration</div>
+                <div class="selected-leg-metric-value">${formatDurationHours(leg.hours)}</div>
+            </div>
+        </div>
+        <div class="selected-leg-editor">${renderLegEditorFields(leg)}</div>
+        <div class="selected-leg-actions">
+            <button type="button" class="ghost compact accent-ghost" onclick="applyLegEditorChanges()">Apply changes</button>
+            <button type="button" class="ghost compact" onclick="closeLegEditorFromCard()">Done</button>
+        </div>
+    `;
 }
 
 function toggleSelectedLegFamilyFromCard() {
@@ -1725,10 +1848,14 @@ function activateLegFromRail(legIndex) {
     expandedFamilySource = familyHasChildren(leg.sourceSegmentIndex)
         ? leg.sourceSegmentIndex
         : expandedFamilySource;
-    clearActiveConditionEditor();
+    setActiveConditionEditor('wind', leg.key);
 
     updateRoute();
     scrollSelectedLegIntoView();
+
+    if (isCompactEditorMode()) {
+        openLegEditorSheet();
+    }
 }
 
 function renderLegRail() {
@@ -2339,6 +2466,8 @@ window.closePopupConditionEditor = closePopupConditionEditor;
 window.deleteWaypointFromPopup = deleteWaypointFromPopup;
 window.toggleSelectedLegFamilyFromCard = toggleSelectedLegFamilyFromCard;
 window.deleteSelectedWaypoint = deleteSelectedWaypoint;
+window.applyLegEditorChanges = applyLegEditorChanges;
+window.closeLegEditorFromCard = closeLegEditorFromCard;
 
 document.querySelectorAll('.summary-tab').forEach(btn => {
     btn.addEventListener('click', () => activateTab(btn.dataset.tab));
@@ -2355,6 +2484,10 @@ if (settingsDrawerHandle) settingsDrawerHandle.addEventListener('click', () => {
 if (settingsDrawerClose) settingsDrawerClose.addEventListener('click', closeSettingsDrawer);
 if (settingsBackdrop) settingsBackdrop.addEventListener('click', closeSettingsDrawer);
 if (savedRoutesClose) savedRoutesClose.addEventListener('click', closeSavedRoutesModal);
+if (legEditorClose) legEditorClose.addEventListener('click', closeLegEditorFromCard);
+if (legEditorCancel) legEditorCancel.addEventListener('click', closeLegEditorFromCard);
+if (legEditorApply) legEditorApply.addEventListener('click', applyLegEditorChanges);
+if (legEditorBackdrop) legEditorBackdrop.addEventListener('click', closeLegEditorFromCard);
 if (savedRoutesBackdrop) savedRoutesBackdrop.addEventListener('click', closeSavedRoutesModal);
 if (savedRoutesList) savedRoutesList.addEventListener('click', (e) => {
     const loadBtn = e.target.closest('[data-load-route-id]');
@@ -2442,6 +2575,7 @@ if (drawerHandle) {
 window.addEventListener('resize', () => {
     syncHeaderInset();
     setDrawerHeight(getSnapHeight(drawerStateOrder[drawerStateIndex]), true);
+    if (!isCompactEditorMode()) closeLegEditorSheet();
     updateRoute();
 });
 
@@ -2625,20 +2759,65 @@ updateDefaultsFromSettings();
         }
     }
 
+    const SKU_ANNUAL  = 'sailing_cts_annual';
+    const SKU_MONTHLY = 'sailing_cts_monthly';
+    const PLAY_PACKAGE = 'com.philwright.sailingcts';
+
+    function launchPlayStoreBilling(sku) {
+        const url = `https://play.google.com/store/account/subscriptions?sku=${sku}&package=${PLAY_PACKAGE}`;
+        if (window.Capacitor && typeof Capacitor.Plugins?.Browser?.open === 'function') {
+            Capacitor.Plugins.Browser.open({ url });
+        } else {
+            window.open(url, '_blank', 'noopener');
+        }
+    }
+
     function handleSubscribe(plan) {
-        const price = plan === 'annual' ? '£11.99/year' : '£1.99/month';
-        if (confirm('Subscribe for ' + price + '?\n\nTap OK to simulate a successful subscription for testing.')) {
-            markSubscribed();
-            dismissOverlay('trialPaywallScreen');
-            showToast('Subscription activated — welcome aboard!');
+        const sku = plan === 'annual' ? SKU_ANNUAL : SKU_MONTHLY;
+
+        if (window.Capacitor && Capacitor.isNativePlatform()) {
+            if (typeof Capacitor.Plugins?.SailingBilling?.purchase === 'function') {
+                Capacitor.Plugins.SailingBilling.purchase({ sku })
+                    .then(() => {
+                        markSubscribed();
+                        dismissOverlay('trialPaywallScreen');
+                        showToast('Subscription activated — welcome aboard!');
+                    })
+                    .catch(err => {
+                        if (err && err.code !== 'USER_CANCELLED') {
+                            showToast('Subscription failed — please try again.');
+                        }
+                    });
+            } else {
+                showToast('Opening Google Play…');
+                launchPlayStoreBilling(sku);
+            }
+        } else {
+            showToast('Subscribe through Google Play on your Android device.');
         }
     }
 
     function handleRestorePurchase(overlayId) {
-        if (confirm('Restore purchase?\n\nTap OK to simulate a successful restore for testing.')) {
-            markSubscribed();
-            dismissOverlay(overlayId);
-            showToast('Purchase restored — welcome back!');
+        if (window.Capacitor && Capacitor.isNativePlatform()) {
+            if (typeof Capacitor.Plugins?.SailingBilling?.restorePurchases === 'function') {
+                showToast('Checking your Google Play subscription…');
+                Capacitor.Plugins.SailingBilling.restorePurchases()
+                    .then(result => {
+                        if (result && result.active) {
+                            markSubscribed();
+                            dismissOverlay(overlayId);
+                            showToast('Purchase restored — welcome back!');
+                        } else {
+                            showToast('No active subscription found on this account.');
+                        }
+                    })
+                    .catch(() => showToast('Could not check subscription — please try again.'));
+            } else {
+                showToast('Opening Google Play…');
+                launchPlayStoreBilling(SKU_ANNUAL);
+            }
+        } else {
+            showToast('Open the app on your Android device to restore your purchase.');
         }
     }
 

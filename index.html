@@ -332,6 +332,26 @@
         <div id="savedRoutesList" class="saved-routes-list"></div>
     </div>
 
+    <!-- Leg editor bottom sheet (mobile) -->
+    <div id="legEditorBackdrop" class="leg-editor-backdrop hidden" aria-hidden="true"></div>
+    <div id="legEditorSheet" class="leg-editor-sheet hidden" aria-hidden="true">
+        <div class="leg-editor-handle-row">
+            <div class="leg-editor-handle-bar"></div>
+        </div>
+        <div class="leg-editor-header">
+            <div>
+                <div id="legEditorTitle" class="leg-editor-title"></div>
+                <div id="legEditorSubtitle" class="leg-editor-subtitle"></div>
+            </div>
+            <button id="legEditorClose" class="leg-editor-close" aria-label="Close editor">&#x2715;</button>
+        </div>
+        <div id="legEditorBody" class="leg-editor-body"></div>
+        <div class="leg-editor-footer">
+            <button id="legEditorCancel" type="button" class="ghost compact">Cancel</button>
+            <button id="legEditorApply" type="button" class="ghost compact accent-ghost">Apply</button>
+        </div>
+    </div>
+
     <div id="toastMessage" class="toast-message hidden" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
