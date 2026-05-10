@@ -1,8 +1,11 @@
 {
+  "id": "/Planner/",
   "name": "Sailing Planner Course to Steer",
   "short_name": "Sailing Planner",
+  "description": "Plan your sailing passage with tidal atlas, live wind, course to steer calculations and voyage logbook.",
   "start_url": "./index.html",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#edf2f6",
   "theme_color": "#173247",
   "icons": [
