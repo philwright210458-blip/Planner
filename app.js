@@ -14,7 +14,13 @@ const map = L.map('map', {
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     subdomains: 'abcd',
     maxZoom: 20,
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO &copy; <a href="https://www.openseamap.org" target="_blank">OpenSeaMap</a>'
+}).addTo(map);
+
+L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    opacity: 1,
+    attribution: ''
 }).addTo(map);
 
 const polyline = L.polyline([], {
