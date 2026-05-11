@@ -2662,6 +2662,8 @@ updateDefaultsFromSettings();
 
 (function initTrialSystem() {
 
+    if (new URLSearchParams(window.location.search).get('dev') === '1') return;
+
     const TRIAL_START_KEY = 'sailing_trial_start';
     const SUBSCRIBED_KEY  = 'sailing_subscribed';
     const TRIAL_DAYS      = 14;

@@ -2434,6 +2434,29 @@ body.route-editing .summary-chip-edit .summary-action-btn {
     color: var(--accent, #4d8fc4);
 }
 
+/* ── About text (welcome screen) ── */
+
+.trial-about {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    color: #5d7a8d;
+    text-align: center;
+    line-height: 1.6;
+    margin: 0 0 8px;
+    padding: 0 4px;
+}
+
+
+/* ── About text (settings drawer) ── */
+
+.settings-about-text {
+    font-size: 13px;
+    color: var(--text-soft);
+    line-height: 1.6;
+    margin: 0 0 10px;
+}
+
+
 /* ── Leg editor bottom sheet ── */
 
 .leg-editor-backdrop {
