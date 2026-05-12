@@ -1813,55 +1813,10 @@ function renderTopRouteHeader(totalDistance = null, totalHours = null) {
 function renderSelectedLegCard(totalDistance = null, totalHours = null) {
     if (!selectedLegCardContent || !selectedLegCard) return;
 
-    const leg = getActiveEditorLeg();
-
-    if (!leg || isCompactEditorMode()) {
-        selectedLegCard.style.display = 'none';
-        selectedLegCardContent.innerHTML = '';
-        return;
-    }
-
-    selectedLegCard.style.display = '';
-    const startWpt = waypoints[leg.sourceSegmentIndex]?.getLatLng();
-    const endWpt   = waypoints[leg.sourceSegmentIndex + 1]?.getLatLng();
-    const startCoord = startWpt ? formatLatLng(startWpt.lat, startWpt.lng) : '';
-    const endCoord   = endWpt   ? formatLatLng(endWpt.lat,   endWpt.lng)   : '';
-    const variationDeg = parseFloat(magneticVariationInput?.value) || 0;
-    const ctsLabel = Math.abs(variationDeg) > 0.05 ? 'CTS(M)' : 'CTS(T)';
-
-    selectedLegCardContent.innerHTML = `
-        <div class="selected-leg-card-header">
-            <div>
-                <div class="selected-leg-card-kicker">Edit local conditions</div>
-                <div class="selected-leg-card-title">Leg ${escapeHtml(leg.label)} conditions</div>
-                <div class="selected-leg-card-subtitle">Waypoint ${leg.sourceSegmentIndex + 1} &rarr; Waypoint ${leg.sourceSegmentIndex + 2} &bull; ${leg.status}</div>
-                ${startCoord ? `<div class="selected-leg-card-coords">${startCoord} &rarr; ${endCoord}</div>` : ''}
-            </div>
-        </div>
-        <div class="selected-leg-metrics">
-            <div class="selected-leg-metric">
-                <div class="selected-leg-metric-label">${ctsLabel}</div>
-                <div class="selected-leg-metric-value">${leg.cts.toFixed(1)}&deg;</div>
-            </div>
-            <div class="selected-leg-metric">
-                <div class="selected-leg-metric-label">Track</div>
-                <div class="selected-leg-metric-value">${leg.track.toFixed(1)}&deg;</div>
-            </div>
-            <div class="selected-leg-metric">
-                <div class="selected-leg-metric-label">Distance</div>
-                <div class="selected-leg-metric-value">${leg.distance.toFixed(2)} NM</div>
-            </div>
-            <div class="selected-leg-metric">
-                <div class="selected-leg-metric-label">Duration</div>
-                <div class="selected-leg-metric-value">${formatDurationHours(leg.hours)}</div>
-            </div>
-        </div>
-        <div class="selected-leg-editor">${renderLegEditorFields(leg)}</div>
-        <div class="selected-leg-actions">
-            <button type="button" class="ghost compact accent-ghost" onclick="applyLegEditorChanges()">Apply changes</button>
-            <button type="button" class="ghost compact" onclick="closeLegEditorFromCard()">Done</button>
-        </div>
-    `;
+    // Editing on desktop is done via the map popup; on mobile via the slide-up sheet.
+    // This bottom panel is no longer used — keep it hidden on all screen sizes.
+    selectedLegCard.style.display = 'none';
+    selectedLegCardContent.innerHTML = '';
 }
 
 function toggleSelectedLegFamilyFromCard() {
