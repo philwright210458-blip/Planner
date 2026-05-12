@@ -56,6 +56,7 @@ const defaults = {
     tideDir: 0,
     tideSpeed: 1,
     leeway: 3,
+    magneticVariation: 0,
     startLocation: '',
     destination: ''
 };
@@ -74,6 +75,7 @@ const launchSplash = document.getElementById('launchSplash');
 
 const boatSpeedInput = document.getElementById('boatSpeed');
 const leewayInput = document.getElementById('leeway');
+const magneticVariationInput = document.getElementById('magneticVariation');
 const startLocationInput = document.getElementById('startLocation');
 const destinationInput = document.getElementById('destination');
 const departureDateInput = document.getElementById('departureDateInput');
@@ -1493,6 +1495,17 @@ function normaliseDeg(d) {
     return ((d % 360) + 360) % 360;
 }
 
+// Format decimal lat/lng as nautical DDM: 54°32.10'N 003°12.40'W
+function formatLatLng(lat, lng) {
+    const latAbs = Math.abs(lat);
+    const lngAbs = Math.abs(lng);
+    const latD = Math.floor(latAbs);
+    const latM = ((latAbs - latD) * 60).toFixed(2);
+    const lngD = Math.floor(lngAbs);
+    const lngM = ((lngAbs - lngD) * 60).toFixed(2);
+    return `${latD}\u00b0${latM}\u2032${lat >= 0 ? 'N' : 'S'} ${lngD}\u00b0${lngM}\u2032${lng >= 0 ? 'E' : 'W'}`;
+}
+
 function getPerformanceBoatSpeed(enteredSpeed) {
     return Math.max(0.5, Math.min(10, Number.isFinite(Number(enteredSpeed)) ? Number(enteredSpeed) : 5));
 }
@@ -1526,7 +1539,14 @@ function calculateLeg(p1, p2, performancePercent, windDir, windSpeed, tideDir, t
     }
     const cts = normaliseDeg(ctsBase + ctsLeewayCorrection);
 
-    // Speed over ground: along-track component of (boat on CTS + tide)
+    // Apply magnetic variation to convert True CTS to Magnetic CTS.
+    // Variation West = positive (compass reads higher than true).
+    // Variation East = negative (compass reads lower than true).
+    // Rule: Magnetic = True + Variation_West
+    const variationDeg = parseFloat(magneticVariationInput?.value) ?? defaults.magneticVariation;
+    const ctsMagnetic = normaliseDeg(cts + (Number.isFinite(variationDeg) ? variationDeg : 0));
+
+    // Speed over ground: along-track component of (boat on True CTS + tide)
     const ctsRad = toRad(cts);
     const tideRad = toRad(tideDir);
     const trackRad = toRad(track);
@@ -1536,7 +1556,7 @@ function calculateLeg(p1, p2, performancePercent, windDir, windSpeed, tideDir, t
 
     const hours = dist / sog;
 
-    return { track, cts, distance: dist, hours, status, stw, sog, relativeAngle };
+    return { track, cts: ctsMagnetic, ctsTrue: cts, distance: dist, hours, status, stw, sog, relativeAngle };
 }
 
 function getChunkWind(sourceSegmentIndex, chunkIndex) {
@@ -1584,29 +1604,29 @@ function getParentLegCTSFromAverage(sourceIndex, latlngs, performancePercent) {
         ? estimateSourceSegmentChunkCount(start, end, sourceIndex, performancePercent)
         : 1;
 
-    // Accumulate sin/cos for circular mean of angles; arithmetic mean for speeds
-    let windDirSinSum = 0, windDirCosSum = 0;
-    let windSpeedSum = 0;
-    let tideDirSinSum = 0, tideDirCosSum = 0;
-    let tideSpeedSum = 0;
+    // Accumulate East/North components weighted by speed for proper vector averaging.
+    // This correctly cancels opposing tides (e.g. flood then ebb) rather than
+    // averaging directions and speeds independently.
+    let windX = 0, windY = 0;  // East, North wind components
+    let tideX = 0, tideY = 0;  // East, North tide components
 
     for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++) {
         const wind = getChunkWind(sourceIndex, chunkIndex);
         const tide = getChunkTide(sourceIndex, chunkIndex);
 
-        windDirSinSum += Math.sin(toRad(wind.dir));
-        windDirCosSum += Math.cos(toRad(wind.dir));
-        windSpeedSum += wind.speed;
+        windX += wind.speed * Math.sin(toRad(wind.dir));
+        windY += wind.speed * Math.cos(toRad(wind.dir));
 
-        tideDirSinSum += Math.sin(toRad(tide.dir));
-        tideDirCosSum += Math.cos(toRad(tide.dir));
-        tideSpeedSum += tide.speed;
+        tideX += tide.speed * Math.sin(toRad(tide.dir));
+        tideY += tide.speed * Math.cos(toRad(tide.dir));
     }
 
-    const avgWindDir = normaliseDeg(toDeg(Math.atan2(windDirSinSum / chunkCount, windDirCosSum / chunkCount)));
-    const avgWindSpeed = windSpeedSum / chunkCount;
-    const avgTideDir = normaliseDeg(toDeg(Math.atan2(tideDirSinSum / chunkCount, tideDirCosSum / chunkCount)));
-    const avgTideSpeed = tideSpeedSum / chunkCount;
+    // Effective direction = direction of summed vector
+    // Effective speed = magnitude of averaged vector (opposing tides reduce net speed)
+    const avgWindDir = normaliseDeg(toDeg(Math.atan2(windX, windY)));
+    const avgWindSpeed = Math.sqrt((windX / chunkCount) ** 2 + (windY / chunkCount) ** 2);
+    const avgTideDir = normaliseDeg(toDeg(Math.atan2(tideX, tideY)));
+    const avgTideSpeed = Math.sqrt((tideX / chunkCount) ** 2 + (tideY / chunkCount) ** 2);
 
     const parentLeg = calculateLeg(
         start,
@@ -1802,17 +1822,25 @@ function renderSelectedLegCard(totalDistance = null, totalHours = null) {
     }
 
     selectedLegCard.style.display = '';
+    const startWpt = waypoints[leg.sourceSegmentIndex]?.getLatLng();
+    const endWpt   = waypoints[leg.sourceSegmentIndex + 1]?.getLatLng();
+    const startCoord = startWpt ? formatLatLng(startWpt.lat, startWpt.lng) : '';
+    const endCoord   = endWpt   ? formatLatLng(endWpt.lat,   endWpt.lng)   : '';
+    const variationDeg = parseFloat(magneticVariationInput?.value) || 0;
+    const ctsLabel = Math.abs(variationDeg) > 0.05 ? 'CTS(M)' : 'CTS(T)';
+
     selectedLegCardContent.innerHTML = `
         <div class="selected-leg-card-header">
             <div>
                 <div class="selected-leg-card-kicker">Edit local conditions</div>
                 <div class="selected-leg-card-title">Leg ${escapeHtml(leg.label)} conditions</div>
                 <div class="selected-leg-card-subtitle">Waypoint ${leg.sourceSegmentIndex + 1} &rarr; Waypoint ${leg.sourceSegmentIndex + 2} &bull; ${leg.status}</div>
+                ${startCoord ? `<div class="selected-leg-card-coords">${startCoord} &rarr; ${endCoord}</div>` : ''}
             </div>
         </div>
         <div class="selected-leg-metrics">
             <div class="selected-leg-metric">
-                <div class="selected-leg-metric-label">CTS</div>
+                <div class="selected-leg-metric-label">${ctsLabel}</div>
                 <div class="selected-leg-metric-value">${leg.cts.toFixed(1)}&deg;</div>
             </div>
             <div class="selected-leg-metric">
@@ -1873,16 +1901,26 @@ function renderLegRail() {
         return;
     }
 
-    track.innerHTML = currentLegData.map((leg, index) => `
+    const variationDeg = parseFloat(magneticVariationInput?.value) || 0;
+    const ctsRailLabel = Math.abs(variationDeg) > 0.05 ? 'CTS(M)' : 'CTS(T)';
+
+    track.innerHTML = currentLegData.map((leg, index) => {
+        const isMainLeg = leg.chunkIndex === 0;
+        const startWpt = isMainLeg ? waypoints[leg.sourceSegmentIndex]?.getLatLng() : null;
+        const coordHtml = startWpt
+            ? `<div class="leg-rail-card-coord">${formatLatLng(startWpt.lat, startWpt.lng)}</div>`
+            : '';
+        return `
         <button type="button" class="leg-rail-card${index === selectedLegIndex ? ' selected' : ''}" data-leg-rail-index="${index}">
             <div class="leg-rail-card-top">
                 <div class="leg-rail-card-label">${escapeHtml(leg.label)}</div>
                 <div class="leg-rail-card-distance">${leg.distance.toFixed(2)} NM</div>
             </div>
-            <div class="leg-rail-card-cts">CTS ${Math.round(leg.cts)}°</div>
+            <div class="leg-rail-card-cts">${ctsRailLabel} ${Math.round(leg.cts)}&deg;</div>
+            ${coordHtml}
             <div class="leg-rail-card-status">${renderStatus(leg.status)}</div>
         </button>
-    `).join('');
+    `}).join('');
 
     track.querySelectorAll('[data-leg-rail-index]').forEach((el) => {
         el.addEventListener('click', (event) => {
@@ -2610,6 +2648,7 @@ if (autoSplitLegsInput) {
 
 if (boatSpeedInput) boatSpeedInput.addEventListener('input', updateRoute);
 if (leewayInput) leewayInput.addEventListener('input', updateRoute);
+if (magneticVariationInput) magneticVariationInput.addEventListener('input', updateRoute);
 if (startLocationInput) startLocationInput.addEventListener('input', updateDefaultsFromSettings);
 if (destinationInput) destinationInput.addEventListener('input', updateDefaultsFromSettings);
 

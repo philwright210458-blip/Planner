@@ -33,16 +33,6 @@
             <div class="trial-app-sub">Course to Steer</div>
             <div class="trial-tagline">Plan your passage. Know your tide.</div>
 
-            <p class="trial-about">
-                A passage-planning tool for day sailing and coastal cruising.
-            </p>
-            <p class="trial-about">
-                Explore the effect of wind and tidal streams on Course to Steer, compare route options, and visualise changing conditions.
-            </p>
-            <p class="trial-about">
-                This app supports &mdash; but does not replace &mdash; proper passage planning, official navigation resources, and good seamanship.
-            </p>
-
             <ul class="trial-feature-list">
                 <li>Interactive nautical chart with route planning</li>
                 <li>Tidal atlas &amp; live tide data</li>
@@ -210,6 +200,12 @@
                                 <input id="leeway" type="number" value="3" min="0" max="15" step="0.5">
                             </div>
 
+                            <div class="form-field form-field-variation">
+                                <label for="magneticVariation">Variation °</label>
+                                <input id="magneticVariation" type="number" value="0" min="-30" max="30" step="0.5">
+                                <div class="field-note">West = positive (e.g. 2°W enter 2). East = negative. Converts CTS to magnetic.</div>
+                            </div>
+
                             <div class="form-field form-field-start-location">
                                 <label for="startLocation">Start location</label>
                                 <input id="startLocation" type="text" placeholder="Hartlepool">
@@ -276,19 +272,6 @@
                         <div class="small-note" id="liveTideKeyStatus">No Stormglass API key saved.</div>
                     </div>
 
-                    <div class="settings-card">
-                        <div class="settings-card-title">About</div>
-                        <p class="settings-about-text">
-                            A passage-planning tool for day sailing and coastal cruising.
-                        </p>
-                        <p class="settings-about-text">
-                            Explore the effect of wind and tidal streams on Course to Steer, compare route options, and visualise changing conditions.
-                        </p>
-                        <p class="settings-about-text">
-                            This app supports &mdash; but does not replace &mdash; proper passage planning, official navigation resources, and good seamanship.
-                        </p>
-                    </div>
-
                     <div class="settings-policy-row">
                         <a href="https://philwright210458-blip.github.io/privacy/" target="_blank" rel="noopener" class="settings-policy-link">Privacy Policy</a>
                     </div>
@@ -353,26 +336,6 @@
             <button id="savedRoutesClose" class="saved-routes-close" aria-label="Close saved routes">×</button>
         </div>
         <div id="savedRoutesList" class="saved-routes-list"></div>
-    </div>
-
-    <!-- Leg editor bottom sheet (mobile) -->
-    <div id="legEditorBackdrop" class="leg-editor-backdrop hidden" aria-hidden="true"></div>
-    <div id="legEditorSheet" class="leg-editor-sheet hidden" aria-hidden="true">
-        <div class="leg-editor-handle-row">
-            <div class="leg-editor-handle-bar"></div>
-        </div>
-        <div class="leg-editor-header">
-            <div>
-                <div id="legEditorTitle" class="leg-editor-title"></div>
-                <div id="legEditorSubtitle" class="leg-editor-subtitle"></div>
-            </div>
-            <button id="legEditorClose" class="leg-editor-close" aria-label="Close editor">&#x2715;</button>
-        </div>
-        <div id="legEditorBody" class="leg-editor-body"></div>
-        <div class="leg-editor-footer">
-            <button id="legEditorCancel" type="button" class="ghost compact">Cancel</button>
-            <button id="legEditorApply" type="button" class="ghost compact accent-ghost">Apply</button>
-        </div>
     </div>
 
     <div id="toastMessage" class="toast-message hidden" aria-live="polite"></div>

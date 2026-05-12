@@ -1,4 +1,4 @@
-const APP_VERSION = 'v87';
+const APP_VERSION = 'v77';
 const APP_CACHE = `sailing-planner-app-${APP_VERSION}`;
 const TILE_CACHE = `sailing-planner-tiles-${APP_VERSION}`;
 const RUNTIME_CACHE = `sailing-planner-runtime-${APP_VERSION}`;
@@ -48,7 +48,7 @@ self.addEventListener('fetch', (event) => {
     if (request.method !== 'GET') return;
 
     const url = new URL(request.url);
-    const isTileRequest = url.hostname.includes('basemaps.cartocdn.com') || url.hostname.includes('tiles.openseamap.org');
+    const isTileRequest = url.hostname.includes('basemaps.cartocdn.com');
     const isWindfinder = url.hostname.includes('windfinder.com');
     const isNavigation = request.mode === 'navigate';
 
