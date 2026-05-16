@@ -11,7 +11,7 @@ const map = L.map('map', {
     );
 })();
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     subdomains: 'abcd',
     maxZoom: 20,
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO &copy; <a href="https://www.openseamap.org" target="_blank">OpenSeaMap</a>'
@@ -2500,6 +2500,16 @@ if (savedRoutesList) savedRoutesList.addEventListener('click', (e) => {
     }
 });
 if (liveTideSetupBtn) liveTideSetupBtn.addEventListener('click', () => { revealLiveTideKeyCard('', true); });
+
+const nightModeBtn = document.getElementById('nightModeBtn');
+if (nightModeBtn) {
+    const nightActive = localStorage.getItem('nightMode') === '1';
+    if (nightActive) document.body.classList.add('night-mode');
+    nightModeBtn.addEventListener('click', () => {
+        const on = document.body.classList.toggle('night-mode');
+        localStorage.setItem('nightMode', on ? '1' : '0');
+    });
+}
 if (saveStormglassKeyBtn) saveStormglassKeyBtn.addEventListener('click', () => {
     const value = (stormglassApiKeyInput?.value || '').trim();
     setStormglassApiKey(value);
@@ -2829,3 +2839,5 @@ updateDefaultsFromSettings();
     else if (status === 'trial_expired') showPaywallScreen();
 
 })();
+
+if (window.lucide) lucide.createIcons();

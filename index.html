@@ -15,7 +15,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#0A1628">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -138,11 +141,7 @@
 
                 <div class="top-route-actions">
                     <button class="fab fab-icon fab-menu-btn" id="actionMenuBtn" title="Route actions" aria-label="Route actions">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M5 7h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                            <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                            <path d="M5 17h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                        </svg>
+                        <i data-lucide="menu" aria-hidden="true"></i>
                     </button>
 
                     <div id="actionMenu" class="action-menu hidden" aria-hidden="true">
@@ -162,24 +161,27 @@
         </div>
 
         <div id="mapInfoCard" class="map-info-card hidden right" aria-hidden="true">
-            <button id="mapInfoClose" class="map-info-close" aria-label="Close information">×</button>
+            <button id="mapInfoClose" class="map-info-close" aria-label="Close information"><i data-lucide="x" aria-hidden="true"></i></button>
             <div id="mapInfoContent"></div>
         </div>
 
         <div id="settingsBackdrop" class="settings-backdrop hidden" aria-hidden="true"></div>
 
-        <aside id="settingsDrawer" class="settings-drawer hidden" aria-hidden="true">
-            <button id="settingsDrawerHandle" class="settings-drawer-handle" aria-label="Open settings">
-                <span class="settings-drawer-handle-inner">
-                    <span class="settings-drawer-handle-bar"></span>
-                    <span class="settings-drawer-handle-label">Settings</span>
-                </span>
+        <div class="left-map-controls">
+            <button id="settingsDrawerHandle" class="fab fab-icon" aria-label="Open settings" title="Settings">
+                <i data-lucide="settings" aria-hidden="true"></i>
             </button>
+            <button id="nightModeBtn" class="fab fab-icon" aria-label="Toggle night mode" title="Night mode">
+                <i data-lucide="moon" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <aside id="settingsDrawer" class="settings-drawer hidden" aria-hidden="true">
 
             <div class="settings-drawer-inner">
             <div class="settings-drawer-header">
                 <div class="settings-drawer-title">Settings</div>
-                <button id="settingsDrawerClose" class="settings-drawer-close" aria-label="Close settings">×</button>
+                <button id="settingsDrawerClose" class="settings-drawer-close" aria-label="Close settings"><i data-lucide="x" aria-hidden="true"></i></button>
             </div>
 
             <div class="settings-drawer-content">
@@ -333,7 +335,7 @@
     <div id="savedRoutesModal" class="saved-routes-modal hidden" aria-hidden="true">
         <div class="saved-routes-header">
             <div class="saved-routes-title">Saved Routes</div>
-            <button id="savedRoutesClose" class="saved-routes-close" aria-label="Close saved routes">×</button>
+            <button id="savedRoutesClose" class="saved-routes-close" aria-label="Close saved routes"><i data-lucide="x" aria-hidden="true"></i></button>
         </div>
         <div id="savedRoutesList" class="saved-routes-list"></div>
     </div>
@@ -341,6 +343,7 @@
     <div id="toastMessage" class="toast-message hidden" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="app.js"></script>
 
 </body>
