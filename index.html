@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Sailing Planner Course to Steer</title>
+    <title>Nav It — Passage Planning</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
@@ -31,10 +31,10 @@
     <!-- Screen 1: Welcome (shown to brand-new users only) -->
     <div id="trialWelcomeScreen" class="trial-overlay hidden" aria-hidden="true">
         <div class="trial-card">
-            <img src="icon.png" class="trial-logo" alt="Sailing Course to Steer">
-            <div class="trial-app-name">Sailing</div>
-            <div class="trial-app-sub">Course to Steer</div>
-            <div class="trial-tagline">Plan your passage. Know your tide.</div>
+            <img src="icon.png" class="trial-logo" alt="Nav It — Passage Planning">
+            <div class="trial-app-name">Nav It</div>
+            <div class="trial-app-sub">Plan It · Sail It</div>
+            <div class="trial-tagline">Your passage planner. Your compass. Your course.</div>
 
             <ul class="trial-feature-list">
                 <li>Interactive nautical chart with route planning</li>
@@ -64,7 +64,7 @@
     <!-- Screen 2: Paywall (shown when trial has expired) -->
     <div id="trialPaywallScreen" class="trial-overlay hidden" aria-hidden="true">
         <div class="trial-card">
-            <img src="icon.png" class="trial-logo" alt="Sailing Course to Steer">
+            <img src="icon.png" class="trial-logo" alt="Nav It — Passage Planning">
             <div class="trial-app-name">Your free trial has ended</div>
             <div class="trial-paywall-sub">Choose a plan to keep sailing</div>
 
@@ -109,8 +109,69 @@
     <!-- ============================================================ -->
 
     <div id="launchSplash" class="launch-splash" aria-hidden="true">
-        <img src="icon-splash.png" class="splash-image" alt="Sailing Planner app is loading">
-        <button id="splashContinueBtn" class="splash-continue-btn" type="button" aria-label="Continue to app">Continue</button>
+
+        <!-- Depth contour background -->
+        <svg class="splash-contours" viewBox="0 0 400 400" aria-hidden="true">
+            <circle cx="200" cy="200" r="50"  fill="none" stroke="rgba(91,184,212,0.07)" stroke-width="1"/>
+            <circle cx="200" cy="200" r="90"  fill="none" stroke="rgba(91,184,212,0.06)" stroke-width="1"/>
+            <circle cx="200" cy="200" r="130" fill="none" stroke="rgba(91,184,212,0.05)" stroke-width="1"/>
+            <circle cx="200" cy="200" r="170" fill="none" stroke="rgba(91,184,212,0.04)" stroke-width="1"/>
+            <circle cx="200" cy="200" r="210" fill="none" stroke="rgba(91,184,212,0.03)" stroke-width="1"/>
+            <line x1="0" y1="200" x2="400" y2="200" stroke="rgba(91,184,212,0.04)" stroke-width="0.5"/>
+            <line x1="200" y1="0" x2="200" y2="400" stroke="rgba(91,184,212,0.04)" stroke-width="0.5"/>
+        </svg>
+
+        <!-- Compass rose -->
+        <svg class="splash-compass" viewBox="0 0 120 120" aria-hidden="true">
+            <circle cx="60" cy="60" r="56" fill="none" stroke="rgba(240,160,64,0.22)" stroke-width="1"/>
+            <circle cx="60" cy="60" r="44" fill="none" stroke="rgba(240,160,64,0.12)" stroke-width="0.75"/>
+            <!-- Cardinal N (orange) -->
+            <polygon points="60,8 64,52 60,46 56,52"  fill="#f0a040"/>
+            <!-- Cardinal S -->
+            <polygon points="60,112 64,68 60,74 56,68" fill="rgba(255,255,255,0.5)"/>
+            <!-- Cardinal E -->
+            <polygon points="112,60 68,56 74,60 68,64" fill="rgba(255,255,255,0.5)"/>
+            <!-- Cardinal W (orange) -->
+            <polygon points="8,60 52,56 46,60 52,64"   fill="#f0a040"/>
+            <!-- Intercardinal points -->
+            <polygon points="90,30 70,54 66,49 84,24"  fill="rgba(255,255,255,0.22)"/>
+            <polygon points="30,90 50,66 54,71 36,96"  fill="rgba(255,255,255,0.22)"/>
+            <polygon points="90,90 66,70 71,66 96,84"  fill="rgba(255,255,255,0.22)"/>
+            <polygon points="30,30 54,50 49,54 24,36"  fill="rgba(255,255,255,0.22)"/>
+            <!-- Center -->
+            <circle cx="60" cy="60" r="7"  fill="none" stroke="rgba(240,160,64,0.5)" stroke-width="1.5"/>
+            <circle cx="60" cy="60" r="3"  fill="#f0a040"/>
+            <!-- Cardinal labels -->
+            <text x="60" y="26"  text-anchor="middle" fill="rgba(255,255,255,0.55)" font-family="Inter,sans-serif" font-size="10" font-weight="700">N</text>
+            <text x="60" y="100" text-anchor="middle" fill="rgba(255,255,255,0.3)"  font-family="Inter,sans-serif" font-size="9">S</text>
+            <text x="97" y="64"  text-anchor="middle" fill="rgba(255,255,255,0.3)"  font-family="Inter,sans-serif" font-size="9">E</text>
+            <text x="23" y="64"  text-anchor="middle" fill="rgba(255,255,255,0.3)"  font-family="Inter,sans-serif" font-size="9">W</text>
+        </svg>
+
+        <!-- App name -->
+        <div class="splash-app-name">Nav <span class="splash-it">It</span></div>
+
+        <!-- Tagline -->
+        <div class="splash-tagline-text">Plan It &nbsp;·&nbsp; Sail It</div>
+
+        <!-- Divider -->
+        <div class="splash-divider"></div>
+
+        <!-- Navionics-style body copy -->
+        <p class="splash-body">
+            Access <strong>course-to-steer calculations</strong>, tidal atlas,<br>
+            live wind overlays, magnetic variation correction <strong>and more.</strong>
+        </p>
+
+        <!-- CTA -->
+        <button id="splashContinueBtn" class="splash-continue-btn" type="button" aria-label="Get started">Get Started</button>
+
+        <!-- Secondary link -->
+        <div class="splash-secondary">Find out what's included &rarr;</div>
+
+        <!-- Trial note -->
+        <div class="splash-trial-note">14-day free trial &nbsp;·&nbsp; No payment required</div>
+
     </div>
 
     <!-- Adding a harmless landmark wrapper around main content -->
@@ -120,7 +181,7 @@
 
         <div id="topRouteBar" class="top-route-bar">
             <div class="top-route-main">
-                <div class="top-route-kicker">Sailing Planner</div>
+                <div class="top-route-kicker">Nav It</div>
                 <div id="topRouteTitle" class="top-route-title">Untitled route</div>
                 <div id="topRouteInlineStats" class="top-route-inline-stats">— • —</div>
                 <div id="topRouteSubtitle" class="top-route-subtitle">
