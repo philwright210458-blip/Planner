@@ -235,6 +235,12 @@
             <button id="nightModeBtn" class="fab fab-icon" aria-label="Toggle night mode" title="Night mode">
                 <i data-lucide="moon" aria-hidden="true"></i>
             </button>
+            <button id="windOverlayBtn" class="fab fab-icon overlay-toggle-btn" aria-label="Toggle wind overlay" title="Wind overlay">
+                <i data-lucide="wind" aria-hidden="true"></i>
+            </button>
+            <button id="tideOverlayBtn" class="fab fab-icon overlay-toggle-btn" aria-label="Toggle tide overlay" title="Tide overlay">
+                <i data-lucide="waves" aria-hidden="true"></i>
+            </button>
         </div>
 
         <aside id="settingsDrawer" class="settings-drawer hidden" aria-hidden="true">
@@ -272,16 +278,6 @@
                             <div class="form-field form-field-start-location">
                                 <label for="startLocation">Start location</label>
                                 <input id="startLocation" type="text" placeholder="Hartlepool">
-                            </div>
-
-                            <div class="form-field form-field-departure-date">
-                                <label for="departureDateInput">Departure date</label>
-                                <input id="departureDateInput" type="date">
-                            </div>
-
-                            <div class="form-field form-field-departure-time">
-                                <label for="departureTimeInput">Departure time</label>
-                                <input id="departureTimeInput" type="time" value="09:00">
                             </div>
 
                             <div class="form-field form-field-live-tide">

@@ -32,6 +32,9 @@ const polyline = L.polyline([], {
 let waypoints = [];
 let arrowMarkers = [];
 let windBarbMarkers = [];
+let tideBarbMarkers = [];
+let showWindOverlay = false;
+let showTideOverlay = false;
 let legSegments = [];
 let generatedWaypointMarkers = [];
 let currentLegData = [];
@@ -75,11 +78,8 @@ const launchSplash = document.getElementById('launchSplash');
 
 const boatSpeedInput = document.getElementById('boatSpeed');
 const leewayInput = document.getElementById('leeway');
-const magneticVariationInput = document.getElementById('magneticVariation');
-const startLocationInput = document.getElementById('startLocation');
+const magneticVariationInput = document.getElementById('magneticVariation');const startLocationInput = document.getElementById('startLocation');
 const destinationInput = document.getElementById('destination');
-const departureDateInput = document.getElementById('departureDateInput');
-const departureTimeInput = document.getElementById('departureTimeInput');
 const autoSplitLegsInput = document.getElementById('autoSplitLegs');
 const actionMenuBtn = document.getElementById('actionMenuBtn');
 const actionMenu = document.getElementById('actionMenu');
@@ -956,8 +956,8 @@ function buildFamilyInfoHtml(sourceSegmentIndex) {
             ${statusLine}
             <div class="wind-popup-line">Waypoint ${endWaypoint}: ${Math.round(first.track)}°</div>
             <div class="wind-popup-line">CTS: ${Math.round(first.cts)}°</div>
-            <div class="wind-popup-line">Wind: ${Math.round(first.avgWindDir)}° @ ${first.avgWindSpeed.toFixed(1)} kt</div>
-            <div class="wind-popup-line">Tide: ${Math.round(first.avgTideDir)}° @ ${first.avgTideSpeed.toFixed(1)} kt</div>
+            <div class="wind-popup-line">Wind: ${degreesToCompass(first.avgWindDir)} @ ${first.avgWindSpeed.toFixed(1)} kt</div>
+            <div class="wind-popup-line">Tide: ${degreesToCompass(first.avgTideDir)} @ ${first.avgTideSpeed.toFixed(1)} kt</div>
             ${warningsHtml}
             ${actionsHtml}
         </div>
@@ -1020,7 +1020,7 @@ function buildPopupConditionEditorHtml(sourceSegmentIndex, preferredLegIndex = n
                     <div class="popup-editor-group-title">Wind</div>
                     <label class="popup-editor-field" for="popupWindDir">
                         <span>Dir</span>
-                        <input id="popupWindDir" type="number" inputmode="numeric" step="1" value="${Math.round(leg.windDir)}">
+                        ${compassSelectHtml('popupWindDir', leg.windDir, 'popup-editor-select')}
                     </label>
                     <label class="popup-editor-field" for="popupWindSpeed">
                         <span>Speed</span>
@@ -1031,7 +1031,7 @@ function buildPopupConditionEditorHtml(sourceSegmentIndex, preferredLegIndex = n
                     <div class="popup-editor-group-title">Tide</div>
                     <label class="popup-editor-field" for="popupTideDir">
                         <span>Dir</span>
-                        <input id="popupTideDir" type="number" inputmode="numeric" step="1" value="${Math.round(leg.tideDir)}">
+                        ${compassSelectHtml('popupTideDir', leg.tideDir, 'popup-editor-select')}
                     </label>
                     <label class="popup-editor-field" for="popupTideSpeed">
                         <span>Speed</span>
@@ -1156,15 +1156,15 @@ function renderLegEditorFields(leg) {
         <div class="leg-editor-grid">
             <div class="leg-editor-group">
                 <div class="leg-editor-group-title">Wind</div>
-                <label class="leg-editor-label" for="editorWindDir">Direction &deg;</label>
-                <input id="editorWindDir" class="leg-editor-input" type="number" inputmode="numeric" step="1" value="${Math.round(leg.windDir)}">
+                <label class="leg-editor-label" for="editorWindDir">Direction</label>
+                ${compassSelectHtml('editorWindDir', leg.windDir, 'leg-editor-input leg-editor-select')}
                 <label class="leg-editor-label" for="editorWindSpeed">Speed kt</label>
                 <input id="editorWindSpeed" class="leg-editor-input" type="number" inputmode="decimal" step="0.1" value="${windSpeedText}">
             </div>
             <div class="leg-editor-group">
                 <div class="leg-editor-group-title">Tide</div>
-                <label class="leg-editor-label" for="editorTideDir">Direction &deg;</label>
-                <input id="editorTideDir" class="leg-editor-input" type="number" inputmode="numeric" step="1" value="${Math.round(leg.tideDir)}">
+                <label class="leg-editor-label" for="editorTideDir">Direction</label>
+                ${compassSelectHtml('editorTideDir', leg.tideDir, 'leg-editor-input leg-editor-select')}
                 <label class="leg-editor-label" for="editorTideSpeed">Speed kt</label>
                 <input id="editorTideSpeed" class="leg-editor-input" type="number" inputmode="decimal" step="0.1" value="${tideSpeedText}">
             </div>
@@ -1414,16 +1414,36 @@ function buildLegSegments(displayLegs) {
 }
 
 function buildWindPillHtml(speed, dir) {
-    const s = Math.round(Math.max(0, Number(speed) || 0));
+    const s = Number(speed) || 0;
+    const sDisplay = s % 1 ? s.toFixed(1) : Math.round(s);
+    const arrowRot = (dir + 180) % 360;
+    const compassLabel = degreesToCompass(dir);
     return `
         <div class="wind-pill">
-            <svg width="12" height="12" viewBox="0 0 12 12" style="flex-shrink:0">
-                <g transform="translate(6,6) rotate(${dir})">
-                    <line x1="0" y1="4.5" x2="0" y2="-0.5" stroke="#1a5fa8" stroke-width="1.5" stroke-linecap="round"/>
-                    <polygon points="-2.5,0.5 0,-5.5 2.5,0.5" fill="#1a5fa8"/>
+            <span>${compassLabel} ${sDisplay}kt</span>
+            <svg width="14" height="14" viewBox="0 0 14 14" style="flex-shrink:0">
+                <g transform="translate(7,7) rotate(${arrowRot})">
+                    <line x1="0" y1="6" x2="0" y2="-1" stroke="#0A1628" stroke-width="1.5" stroke-linecap="round"/>
+                    <polygon points="-3,0.5 0,-6 3,0.5" fill="#E63946"/>
                 </g>
             </svg>
-            ${s} kt
+        </div>
+    `;
+}
+
+function buildTidePillHtml(speed, dir) {
+    const s = Number(speed) || 0;
+    const sDisplay = s % 1 ? s.toFixed(1) : Math.round(s);
+    const compassLabel = degreesToCompass(dir);
+    return `
+        <div class="tide-pill">
+            <span>${compassLabel} ${sDisplay}kt</span>
+            <svg width="14" height="14" viewBox="0 0 14 14" style="flex-shrink:0">
+                <g transform="translate(7,7) rotate(${dir})">
+                    <line x1="0" y1="6" x2="0" y2="-1" stroke="#7A3800" stroke-width="1.5" stroke-linecap="round"/>
+                    <polygon points="-3,0.5 0,-6 3,0.5" fill="#F4A261"/>
+                </g>
+            </svg>
         </div>
     `;
 }
@@ -1480,6 +1500,52 @@ function addWindBarb(latlng, sourceSegmentIndex) {
     windBarbMarkers.push(marker);
 }
 
+function clearTideBarbs() {
+    tideBarbMarkers.forEach(m => map.removeLayer(m));
+    tideBarbMarkers = [];
+}
+
+function getOffsetTideBarbLatLng(a, b, sourceIndex) {
+    const p1 = map.latLngToContainerPoint(a);
+    const p2 = map.latLngToContainerPoint(b);
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const baseX = p1.x + dx * 0.5;
+    const baseY = p1.y + dy * 0.5;
+    const nx = -dy / len;
+    const ny = dx / len;
+    const offsetPx = 34;
+    const side = (sourceIndex % 2 === 0) ? -1 : 1;
+    return map.containerPointToLatLng(L.point(baseX + nx * offsetPx * side, baseY + ny * offsetPx * side));
+}
+
+function addTideBarb(latlng, sourceSegmentIndex) {
+    const family = getFamilyLegData(sourceSegmentIndex);
+    const first = family[0];
+    if (!first) return;
+
+    const icon = L.divIcon({
+        className: '',
+        html: buildTidePillHtml(first.avgTideSpeed, first.avgTideDir),
+        iconSize: [72, 24],
+        iconAnchor: [36, 12]
+    });
+
+    const marker = L.marker(latlng, { icon, interactive: true }).addTo(map);
+    marker.on('click', () => {
+        const firstLegIndex = getFirstLegIndexForSource(sourceSegmentIndex);
+        if (firstLegIndex >= 0) {
+            selectLeg(firstLegIndex);
+            showQuickLegPopupForLeg(firstLegIndex, latlng);
+        } else {
+            showMapInfo(latlng, buildFamilyInfoHtml(sourceSegmentIndex));
+        }
+    });
+
+    tideBarbMarkers.push(marker);
+}
+
 function angleDiff(a, b) {
     let d = Math.abs((a - b) % 360);
     return d > 180 ? 360 - d : d;
@@ -1493,6 +1559,32 @@ function getStatusFromRelativeAngle(relativeAngle) {
 
 function normaliseDeg(d) {
     return ((d % 360) + 360) % 360;
+}
+
+// ── Compass point utilities ────────────────────────────────────────────────────
+
+const COMPASS_POINTS = [
+    ['N',0],['NNE',22.5],['NE',45],['ENE',67.5],
+    ['E',90],['ESE',112.5],['SE',135],['SSE',157.5],
+    ['S',180],['SSW',202.5],['SW',225],['WSW',247.5],
+    ['W',270],['WNW',292.5],['NW',315],['NNW',337.5]
+];
+
+function degreesToCompass(deg) {
+    const d = normaliseDeg(Number(deg) || 0);
+    const idx = Math.round(d / 22.5) % 16;
+    return COMPASS_POINTS[idx][0];
+}
+
+// Build a <select> showing 16-point compass, pre-selected to nearest point for currentDeg.
+function compassSelectHtml(id, currentDeg, extraClass) {
+    const d = normaliseDeg(Number(currentDeg) || 0);
+    const selectedDeg = Math.round(d / 22.5) * 22.5 % 360;
+    const opts = COMPASS_POINTS.map(([name, deg]) =>
+        `<option value="${deg}"${deg === selectedDeg ? ' selected' : ''}>${name}</option>`
+    ).join('');
+    const cls = extraClass ? ` class="${extraClass}"` : '';
+    return `<select id="${id}"${cls}>${opts}</select>`;
 }
 
 // Format decimal lat/lng as nautical DDM: 54°32.10'N 003°12.40'W
@@ -1813,10 +1905,61 @@ function renderTopRouteHeader(totalDistance = null, totalHours = null) {
 function renderSelectedLegCard(totalDistance = null, totalHours = null) {
     if (!selectedLegCardContent || !selectedLegCard) return;
 
-    // Editing on desktop is done via the map popup; on mobile via the slide-up sheet.
-    // This bottom panel is no longer used — keep it hidden on all screen sizes.
-    selectedLegCard.style.display = 'none';
-    selectedLegCardContent.innerHTML = '';
+    if (selectedLegIndex < 0 || !currentLegData[selectedLegIndex]) {
+        selectedLegCard.style.display = 'none';
+        selectedLegCardContent.innerHTML = '';
+        return;
+    }
+
+    const leg = currentLegData[selectedLegIndex];
+    const windCompass = degreesToCompass(leg.avgWindDir);
+    const tideCompass = degreesToCompass(leg.avgTideDir);
+    const windArrowRot = (leg.avgWindDir + 180) % 360;
+    const tideArrowRot = leg.avgTideDir;
+
+    const diff = angleDiff(leg.avgTideDir, leg.track);
+    let tideStatusClass = 'tide-crossing';
+    let tideStatusLabel = 'Crossing';
+    if (diff < 75) { tideStatusClass = 'tide-favourable'; tideStatusLabel = 'Favourable'; }
+    else if (diff > 105) { tideStatusClass = 'tide-adverse'; tideStatusLabel = 'Adverse'; }
+
+    selectedLegCardContent.innerHTML = `
+        <div class="leg-summary-panel">
+            <div class="leg-summary-title">Leg ${leg.label}</div>
+            <div class="leg-summary-grid">
+                <div class="leg-summary-cell leg-summary-cell-wind">
+                    <div class="leg-summary-kind">Wind</div>
+                    <div class="leg-summary-main">
+                        <svg width="14" height="14" viewBox="0 0 14 14">
+                            <g transform="translate(7,7) rotate(${windArrowRot})">
+                                <line x1="0" y1="6" x2="0" y2="-1" stroke="#5BB8D4" stroke-width="1.5" stroke-linecap="round"/>
+                                <polygon points="-3,0.5 0,-6 3,0.5" fill="#E63946"/>
+                            </g>
+                        </svg>
+                        <span class="leg-summary-compass">${windCompass}</span>
+                        <span class="leg-summary-speed">${leg.avgWindSpeed.toFixed(1)}kt</span>
+                    </div>
+                </div>
+                <div class="leg-summary-cell leg-summary-cell-tide">
+                    <div class="leg-summary-kind">Tide</div>
+                    <div class="leg-summary-main">
+                        <svg width="14" height="14" viewBox="0 0 14 14">
+                            <g transform="translate(7,7) rotate(${tideArrowRot})">
+                                <line x1="0" y1="6" x2="0" y2="-1" stroke="#F4A261" stroke-width="1.5" stroke-linecap="round"/>
+                                <polygon points="-3,0.5 0,-6 3,0.5" fill="#F4A261"/>
+                            </g>
+                        </svg>
+                        <span class="leg-summary-compass">${tideCompass}</span>
+                        <span class="leg-summary-speed">${leg.avgTideSpeed.toFixed(1)}kt</span>
+                    </div>
+                    <div class="leg-summary-tide-status">
+                        <span class="tide-tag ${tideStatusClass}">${tideStatusLabel}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    selectedLegCard.style.display = 'block';
 }
 
 function toggleSelectedLegFamilyFromCard() {
@@ -2034,18 +2177,8 @@ async function applyLiveTide() {
 // ── Tidal Atlas ────────────────────────────────────────────────────────────────
 
 function getDepartureTimestamp() {
-    const dateInput = document.getElementById('departureDateInput');
-    const timeInput = document.getElementById('departureTimeInput');
-    const dateVal = dateInput?.value;
-    const timeVal = timeInput?.value || '09:00';
-    if (dateVal) {
-        const ts = new Date(`${dateVal}T${timeVal}`).getTime();
-        if (Number.isFinite(ts)) return ts;
-    }
-    // Default to today at the entered time
-    const today = new Date().toISOString().slice(0, 10);
-    const ts = new Date(`${today}T${timeVal}`).getTime();
-    return Number.isFinite(ts) ? ts : Date.now();
+    // Always use the current live time — no manual date/time input.
+    return Date.now();
 }
 
 function getSegmentDepartureTimes(latlngs, performancePercent) {
@@ -2301,6 +2434,7 @@ function updateRoute() {
     polyline.setLatLngs([]);
     clearArrowMarkers();
     clearWindBarbs();
+    clearTideBarbs();
     clearLegSegments();
     clearGeneratedWaypointMarkers();
 
@@ -2357,6 +2491,10 @@ function updateRoute() {
 
     let totalDistance = 0;
     let totalHours = 0;
+
+    const overlaySourceIndex = selectedLegIndex >= 0
+        ? (displayLegs[selectedLegIndex]?.sourceSegmentIndex ?? 0)
+        : 0;
 
     displayLegs.forEach((displayLeg, i) => {
         const wind = getChunkWind(displayLeg.sourceSegmentIndex, displayLeg.chunkIndex);
@@ -2422,9 +2560,15 @@ function updateRoute() {
             );
         }
 
-        if (i === selectedLegIndex && selectedLegIndex >= 0) {
-            const barbLatLng = getOffsetBarbLatLng(displayLeg.start, displayLeg.end, i);
-            addWindBarb(barbLatLng, displayLeg.sourceSegmentIndex);
+        if (displayLeg.chunkIndex === 0 && displayLeg.sourceSegmentIndex === overlaySourceIndex) {
+            if (showWindOverlay) {
+                const barbLatLng = getOffsetBarbLatLng(displayLeg.start, displayLeg.end, i);
+                addWindBarb(barbLatLng, displayLeg.sourceSegmentIndex);
+            }
+            if (showTideOverlay) {
+                const tideLatlng = getOffsetTideBarbLatLng(displayLeg.start, displayLeg.end, displayLeg.sourceSegmentIndex);
+                addTideBarb(tideLatlng, displayLeg.sourceSegmentIndex);
+            }
         }
     });
 
@@ -2508,6 +2652,24 @@ if (nightModeBtn) {
     nightModeBtn.addEventListener('click', () => {
         const on = document.body.classList.toggle('night-mode');
         localStorage.setItem('nightMode', on ? '1' : '0');
+    });
+}
+
+const windOverlayBtn = document.getElementById('windOverlayBtn');
+if (windOverlayBtn) {
+    windOverlayBtn.addEventListener('click', () => {
+        showWindOverlay = !showWindOverlay;
+        windOverlayBtn.classList.toggle('overlay-active', showWindOverlay);
+        updateRoute();
+    });
+}
+
+const tideOverlayBtn = document.getElementById('tideOverlayBtn');
+if (tideOverlayBtn) {
+    tideOverlayBtn.addEventListener('click', () => {
+        showTideOverlay = !showTideOverlay;
+        tideOverlayBtn.classList.toggle('overlay-active', showTideOverlay);
+        updateRoute();
     });
 }
 if (saveStormglassKeyBtn) saveStormglassKeyBtn.addEventListener('click', () => {
@@ -2616,21 +2778,6 @@ if (leewayInput) leewayInput.addEventListener('input', updateRoute);
 if (magneticVariationInput) magneticVariationInput.addEventListener('input', updateRoute);
 if (startLocationInput) startLocationInput.addEventListener('input', updateDefaultsFromSettings);
 if (destinationInput) destinationInput.addEventListener('input', updateDefaultsFromSettings);
-
-// Initialise departure date to today if not set, then listen for changes
-if (departureDateInput && !departureDateInput.value) {
-    departureDateInput.value = new Date().toISOString().slice(0, 10);
-}
-if (departureDateInput) departureDateInput.addEventListener('change', () => {
-    if (tideInputSource === 'atlas') {
-        showToast('Departure date changed — re-run Tidal Atlas to update tide values.');
-    }
-});
-if (departureTimeInput) departureTimeInput.addEventListener('change', () => {
-    if (tideInputSource === 'atlas') {
-        showToast('Departure time changed — re-run Tidal Atlas to update tide values.');
-    }
-});
 
 map.on('click', function (e) {
     if (!routeEditingEnabled) return;
