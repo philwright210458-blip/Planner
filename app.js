@@ -32,7 +32,7 @@ const polyline = L.polyline([], {
 let waypoints = [];
 let arrowMarkers = [];
 let windBarbMarkers = [];
-let tideBarbMarkers = [];
+let conditionBarbMarkers = [];
 let showWindOverlay = false;
 let showTideOverlay = false;
 let legSegments = [];
@@ -1349,9 +1349,9 @@ function clearArrowMarkers() {
     arrowMarkers = [];
 }
 
-function clearWindBarbs() {
-    windBarbMarkers.forEach(m => map.removeLayer(m));
-    windBarbMarkers = [];
+function clearConditionBarbs() {
+    conditionBarbMarkers.forEach(m => map.removeLayer(m));
+    conditionBarbMarkers = [];
 }
 
 function clearLegSegments() {
@@ -1424,7 +1424,7 @@ function buildWindPillHtml(speed, dir) {
             <svg width="14" height="14" viewBox="0 0 14 14" style="flex-shrink:0">
                 <g transform="translate(7,7) rotate(${arrowRot})">
                     <line x1="0" y1="6" x2="0" y2="-1" stroke="#0A1628" stroke-width="1.5" stroke-linecap="round"/>
-                    <polygon points="-3,0.5 0,-6 3,0.5" fill="#E63946"/>
+                    <polygon points="-3,0.5 0,-6 3,0.5" fill="#000000"/>
                 </g>
             </svg>
         </div>
@@ -1434,14 +1434,15 @@ function buildWindPillHtml(speed, dir) {
 function buildTidePillHtml(speed, dir) {
     const s = Number(speed) || 0;
     const sDisplay = s % 1 ? s.toFixed(1) : Math.round(s);
+    const arrowRot = (dir + 180) % 360;
     const compassLabel = degreesToCompass(dir);
     return `
         <div class="tide-pill">
             <span>${compassLabel} ${sDisplay}kt</span>
             <svg width="14" height="14" viewBox="0 0 14 14" style="flex-shrink:0">
-                <g transform="translate(7,7) rotate(${dir})">
-                    <line x1="0" y1="6" x2="0" y2="-1" stroke="#7A3800" stroke-width="1.5" stroke-linecap="round"/>
-                    <polygon points="-3,0.5 0,-6 3,0.5" fill="#F4A261"/>
+                <g transform="translate(7,7) rotate(${arrowRot})">
+                    <line x1="0" y1="6" x2="0" y2="-1" stroke="#000000" stroke-width="1.5" stroke-linecap="round"/>
+                    <polygon points="-3,0.5 0,-6 3,0.5" fill="#000000"/>
                 </g>
             </svg>
         </div>
@@ -1474,16 +1475,22 @@ function getOffsetBarbLatLng(a, b, legIndex) {
     return map.containerPointToLatLng(finalPoint);
 }
 
-function addWindBarb(latlng, sourceSegmentIndex) {
+function addConditionBarbs(latlng, sourceSegmentIndex, showWind, showTide) {
     const family = getFamilyLegData(sourceSegmentIndex);
     const first = family[0];
     if (!first) return;
 
+    const windHtml  = showWind ? buildWindPillHtml(first.avgWindSpeed, first.avgWindDir) : '';
+    const tideHtml  = showTide ? buildTidePillHtml(first.avgTideSpeed, first.avgTideDir) : '';
+    const bothShown = showWind && showTide;
+
+    const html = `<div class="condition-barbs-wrap">${windHtml}${tideHtml}</div>`;
+
     const icon = L.divIcon({
         className: '',
-        html: buildWindPillHtml(first.avgWindSpeed, first.avgWindDir),
-        iconSize: [60, 24],
-        iconAnchor: [30, 12]
+        html,
+        iconSize:   [80, bothShown ? 54 : 26],
+        iconAnchor: [40, bothShown ? 27 : 13]
     });
 
     const marker = L.marker(latlng, { icon, interactive: true }).addTo(map);
@@ -1497,53 +1504,7 @@ function addWindBarb(latlng, sourceSegmentIndex) {
         }
     });
 
-    windBarbMarkers.push(marker);
-}
-
-function clearTideBarbs() {
-    tideBarbMarkers.forEach(m => map.removeLayer(m));
-    tideBarbMarkers = [];
-}
-
-function getOffsetTideBarbLatLng(a, b, sourceIndex) {
-    const p1 = map.latLngToContainerPoint(a);
-    const p2 = map.latLngToContainerPoint(b);
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const baseX = p1.x + dx * 0.5;
-    const baseY = p1.y + dy * 0.5;
-    const nx = -dy / len;
-    const ny = dx / len;
-    const offsetPx = 34;
-    const side = (sourceIndex % 2 === 0) ? -1 : 1;
-    return map.containerPointToLatLng(L.point(baseX + nx * offsetPx * side, baseY + ny * offsetPx * side));
-}
-
-function addTideBarb(latlng, sourceSegmentIndex) {
-    const family = getFamilyLegData(sourceSegmentIndex);
-    const first = family[0];
-    if (!first) return;
-
-    const icon = L.divIcon({
-        className: '',
-        html: buildTidePillHtml(first.avgTideSpeed, first.avgTideDir),
-        iconSize: [72, 24],
-        iconAnchor: [36, 12]
-    });
-
-    const marker = L.marker(latlng, { icon, interactive: true }).addTo(map);
-    marker.on('click', () => {
-        const firstLegIndex = getFirstLegIndexForSource(sourceSegmentIndex);
-        if (firstLegIndex >= 0) {
-            selectLeg(firstLegIndex);
-            showQuickLegPopupForLeg(firstLegIndex, latlng);
-        } else {
-            showMapInfo(latlng, buildFamilyInfoHtml(sourceSegmentIndex));
-        }
-    });
-
-    tideBarbMarkers.push(marker);
+    conditionBarbMarkers.push(marker);
 }
 
 function angleDiff(a, b) {
@@ -1932,8 +1893,8 @@ function renderSelectedLegCard(totalDistance = null, totalHours = null) {
                     <div class="leg-summary-main">
                         <svg width="14" height="14" viewBox="0 0 14 14">
                             <g transform="translate(7,7) rotate(${windArrowRot})">
-                                <line x1="0" y1="6" x2="0" y2="-1" stroke="#5BB8D4" stroke-width="1.5" stroke-linecap="round"/>
-                                <polygon points="-3,0.5 0,-6 3,0.5" fill="#E63946"/>
+                                <line x1="0" y1="6" x2="0" y2="-1" stroke="#000000" stroke-width="1.5" stroke-linecap="round"/>
+                                <polygon points="-3,0.5 0,-6 3,0.5" fill="#000000"/>
                             </g>
                         </svg>
                         <span class="leg-summary-compass">${windCompass}</span>
@@ -1945,8 +1906,8 @@ function renderSelectedLegCard(totalDistance = null, totalHours = null) {
                     <div class="leg-summary-main">
                         <svg width="14" height="14" viewBox="0 0 14 14">
                             <g transform="translate(7,7) rotate(${tideArrowRot})">
-                                <line x1="0" y1="6" x2="0" y2="-1" stroke="#F4A261" stroke-width="1.5" stroke-linecap="round"/>
-                                <polygon points="-3,0.5 0,-6 3,0.5" fill="#F4A261"/>
+                                <line x1="0" y1="6" x2="0" y2="-1" stroke="#000000" stroke-width="1.5" stroke-linecap="round"/>
+                                <polygon points="-3,0.5 0,-6 3,0.5" fill="#000000"/>
                             </g>
                         </svg>
                         <span class="leg-summary-compass">${tideCompass}</span>
@@ -2433,8 +2394,7 @@ function updateRoute() {
     currentLegData = [];
     polyline.setLatLngs([]);
     clearArrowMarkers();
-    clearWindBarbs();
-    clearTideBarbs();
+    clearConditionBarbs();
     clearLegSegments();
     clearGeneratedWaypointMarkers();
 
@@ -2561,13 +2521,9 @@ function updateRoute() {
         }
 
         if (displayLeg.chunkIndex === 0 && displayLeg.sourceSegmentIndex === overlaySourceIndex) {
-            if (showWindOverlay) {
+            if (showWindOverlay || showTideOverlay) {
                 const barbLatLng = getOffsetBarbLatLng(displayLeg.start, displayLeg.end, i);
-                addWindBarb(barbLatLng, displayLeg.sourceSegmentIndex);
-            }
-            if (showTideOverlay) {
-                const tideLatlng = getOffsetTideBarbLatLng(displayLeg.start, displayLeg.end, displayLeg.sourceSegmentIndex);
-                addTideBarb(tideLatlng, displayLeg.sourceSegmentIndex);
+                addConditionBarbs(barbLatLng, displayLeg.sourceSegmentIndex, showWindOverlay, showTideOverlay);
             }
         }
     });
