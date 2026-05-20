@@ -272,7 +272,6 @@
                             <div class="form-field form-field-variation">
                                 <label for="magneticVariation">Variation °</label>
                                 <input id="magneticVariation" type="number" value="0" min="-30" max="30" step="0.5">
-                                <div class="field-note">West = positive (e.g. 2°W enter 2). East = negative. Converts CTS to magnetic.</div>
                             </div>
 
                             <div class="form-field form-field-start-location">
@@ -283,12 +282,15 @@
                             <div class="form-field form-field-live-tide">
                                 <label for="liveTideSetupBtn">Live Tide</label>
                                 <button id="liveTideSetupBtn" type="button" class="ghost compact settings-inline-btn">Set up Live Tide</button>
-                                <div class="field-note">Uses Stormglass marine current data with your own API key.</div>
                             </div>
 
                             <div class="form-field form-field-destination">
                                 <label for="destination">Destination</label>
                                 <input id="destination" type="text" placeholder="Whitby">
+                            </div>
+
+                            <div class="form-field form-field-settings-notes">
+                                <div class="field-note">Variation: West = positive (e.g. 2°W enter 2), East = negative. &nbsp;|&nbsp; Live Tide uses Stormglass marine current data with your own API key.</div>
                             </div>
                         </div>
                     </div>

@@ -332,6 +332,15 @@ function registerServiceWorker() {
 function dismissLaunchSplash() {
     if (!launchSplash || splashDismissed) return;
     splashDismissed = true;
+
+    // If the user is brand new (no trial started yet), start their trial now.
+    // The splash already shows everything the welcome screen would show,
+    // so there is no need to show the trial welcome overlay as well.
+    if (!localStorage.getItem('sailing_trial_start') &&
+        !localStorage.getItem('sailing_subscribed')) {
+        localStorage.setItem('sailing_trial_start', Date.now().toString());
+    }
+
     launchSplash.classList.add('hidden');
     document.body.classList.add('map-ready');
 }
@@ -1493,7 +1502,7 @@ function addConditionBarbs(latlng, sourceSegmentIndex, showWind, showTide) {
         iconAnchor: [40, bothShown ? 27 : 13]
     });
 
-    const marker = L.marker(latlng, { icon, interactive: true }).addTo(map);
+    const marker = L.marker(latlng, { icon, interactive: true, zIndexOffset: 1000 }).addTo(map);
     marker.on('click', () => {
         const firstLegIndex = getFirstLegIndexForSource(sourceSegmentIndex);
         if (firstLegIndex >= 0) {
@@ -1893,8 +1902,8 @@ function renderSelectedLegCard(totalDistance = null, totalHours = null) {
                     <div class="leg-summary-main">
                         <svg width="14" height="14" viewBox="0 0 14 14">
                             <g transform="translate(7,7) rotate(${windArrowRot})">
-                                <line x1="0" y1="6" x2="0" y2="-1" stroke="#000000" stroke-width="1.5" stroke-linecap="round"/>
-                                <polygon points="-3,0.5 0,-6 3,0.5" fill="#000000"/>
+                                <line x1="0" y1="6" x2="0" y2="-1" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+                                <polygon points="-3,0.5 0,-6 3,0.5" fill="#ffffff"/>
                             </g>
                         </svg>
                         <span class="leg-summary-compass">${windCompass}</span>
@@ -1906,8 +1915,8 @@ function renderSelectedLegCard(totalDistance = null, totalHours = null) {
                     <div class="leg-summary-main">
                         <svg width="14" height="14" viewBox="0 0 14 14">
                             <g transform="translate(7,7) rotate(${tideArrowRot})">
-                                <line x1="0" y1="6" x2="0" y2="-1" stroke="#000000" stroke-width="1.5" stroke-linecap="round"/>
-                                <polygon points="-3,0.5 0,-6 3,0.5" fill="#000000"/>
+                                <line x1="0" y1="6" x2="0" y2="-1" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+                                <polygon points="-3,0.5 0,-6 3,0.5" fill="#ffffff"/>
                             </g>
                         </svg>
                         <span class="leg-summary-compass">${tideCompass}</span>
