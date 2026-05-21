@@ -103,9 +103,9 @@ body.map-ready #map {
 }
 
 .splash-compass {
-    width: 96px;
-    height: 96px;
-    margin-bottom: 18px;
+    width: 140px;
+    height: 140px;
+    margin-bottom: 10px;
     opacity: 0;
     transform: scale(0.85);
     transition: opacity 1s ease 0.3s, transform 1s ease 0.3s;
@@ -140,7 +140,7 @@ body.map-ready #map {
 
 .splash-tagline-text {
     font-family: 'Inter', system-ui, sans-serif;
-    font-size: 11px;
+    font-size: 15px;
     font-weight: 700;
     letter-spacing: 3px;
     text-transform: uppercase;
@@ -169,7 +169,7 @@ body.map-ready #map {
 
 .splash-body {
     font-family: 'Inter', system-ui, sans-serif;
-    font-size: 13.5px;
+    font-size: 15px;
     color: rgba(255, 255, 255, 0.5);
     line-height: 1.75;
     text-align: center;
@@ -191,9 +191,9 @@ body.map-ready #map {
 .splash-continue-btn {
     position: relative;
     padding: 15px 0;
-    width: 240px;
+    width: 220px;
     border: none;
-    border-radius: 10px;
+    border-radius: 999px;
     background: #f0a040;
     color: #080f18;
     font-size: 15px;
@@ -228,11 +228,12 @@ body.map-ready #map {
 .splash-secondary {
     font-family: 'Inter', system-ui, sans-serif;
     font-size: 12px;
-    color: rgba(91, 184, 212, 0.65);
+    color: rgba(91, 184, 212, 1);
     cursor: pointer;
     margin-bottom: 10px;
     opacity: 0;
     transition: opacity 0.4s ease 0.1s;
+    text-decoration: none;
 }
 
 .splash-continue-btn.visible ~ .splash-secondary {
@@ -242,7 +243,7 @@ body.map-ready #map {
 .splash-trial-note {
     font-family: 'Inter', system-ui, sans-serif;
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.85);
     letter-spacing: 0.3px;
     opacity: 0;
     transition: opacity 0.4s ease 0.2s;
