@@ -1443,7 +1443,7 @@ function buildWindPillHtml(speed, dir) {
 function buildTidePillHtml(speed, dir) {
     const s = Number(speed) || 0;
     const sDisplay = s % 1 ? s.toFixed(1) : Math.round(s);
-    const arrowRot = dir;
+    const arrowRot = (dir + 180) % 360;
     const compassLabel = degreesToCompass(dir);
     return `
         <div class="tide-pill">
@@ -2828,7 +2828,7 @@ updateDefaultsFromSettings();
             const el = document.getElementById(id);
             if (!el) return;
             const active = (id === 'planAnnual' && plan === 'annual') || (id === 'planMonthly' && plan === 'monthly');
-            el.classList.toggle('trial-plan-selected', active);
+            el.classList.toggle('paywall-plan-selected', active);
             el.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
     }
