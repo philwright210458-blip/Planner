@@ -1443,7 +1443,7 @@ function buildWindPillHtml(speed, dir) {
 function buildTidePillHtml(speed, dir) {
     const s = Number(speed) || 0;
     const sDisplay = s % 1 ? s.toFixed(1) : Math.round(s);
-    const arrowRot = (dir + 180) % 360;
+    const arrowRot = dir;
     const compassLabel = degreesToCompass(dir);
     return `
         <div class="tide-pill">
