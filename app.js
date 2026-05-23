@@ -78,7 +78,8 @@ const launchSplash = document.getElementById('launchSplash');
 
 const boatSpeedInput = document.getElementById('boatSpeed');
 const leewayInput = document.getElementById('leeway');
-const magneticVariationInput = document.getElementById('magneticVariation');const startLocationInput = document.getElementById('startLocation');
+const magneticVariationInput = document.getElementById('magneticVariation');
+const startLocationInput = document.getElementById('startLocation');
 const destinationInput = document.getElementById('destination');
 const autoSplitLegsInput = document.getElementById('autoSplitLegs');
 const actionMenuBtn = document.getElementById('actionMenuBtn');
@@ -146,14 +147,6 @@ function syncHeaderInset() {
             const visibleRight = Math.max(0, Math.round(rect.right));
             safeLeft = Math.max(baseGap, visibleRight + baseGap);
             badgeLeft = safeLeft;
-        } else if (!isCompact) {
-            const handle = settingsDrawer.querySelector('.settings-drawer-handle');
-            if (handle) {
-                const handleRect = handle.getBoundingClientRect();
-                const handleRight = Math.max(0, Math.round(handleRect.right));
-                safeLeft = Math.max(baseGap, handleRight + baseGap);
-                badgeLeft = safeLeft;
-            }
         }
     }
 
@@ -186,9 +179,6 @@ const STORMGLASS_API_KEY_STORAGE = 'sailingPlannerStormglassApiKey';
 const SAVED_ROUTE_STORAGE = 'sailingPlannerSavedRoute';
 const SAVED_ROUTES_STORAGE = 'sailingPlannerSavedRoutes';
 let expandedFamilySource = null;
-let waypointWarnings = {};
-let legWarnings = {};
-let lastCompletedLandWarningRouteKey = '';
 
 function toRad(d) {
     return d * Math.PI / 180;
@@ -2358,9 +2348,6 @@ function getLatLngRouteKey(latlngs) {
 }
 
 async function refreshLandWarningsForRoute(latlngs) {
-    waypointWarnings = {};
-    legWarnings = {};
-    lastCompletedLandWarningRouteKey = getLatLngRouteKey(latlngs);
 }
 
 

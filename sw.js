@@ -10,7 +10,6 @@ const APP_ASSETS = [
     './app.js',
     './manifest.json',
     './icon.png',
-    './icon-splash.png',
     './sw.js',
     'https://unpkg.com/leaflet/dist/leaflet.css',
     'https://unpkg.com/leaflet/dist/leaflet.js'
