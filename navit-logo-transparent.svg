@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  
+  <g transform="translate(256,185)">
+    <circle r="148" fill="none" stroke="#B8883A" stroke-width="2"/>
+    <circle r="126" fill="none" stroke="#B8883A" stroke-width="1.5"/>
+    <path d="M0,-130 L22,-40 L0,0 L-22,-40Z" fill="#4A5A68" transform="rotate(45)"/>
+    <path d="M0,-130 L22,-40 L0,0 L-22,-40Z" fill="#4A5A68" transform="rotate(135)"/>
+    <path d="M0,-130 L22,-40 L0,0 L-22,-40Z" fill="#4A5A68" transform="rotate(225)"/>
+    <path d="M0,-130 L22,-40 L0,0 L-22,-40Z" fill="#4A5A68" transform="rotate(315)"/>
+    <path d="M0,-90 L10,-26 L0,0 L-10,-26Z" fill="#7A8E9C" transform="rotate(90)"/>
+    <path d="M0,-94 L12,-30 L0,0 L-12,-30Z" fill="#f0a040" transform="rotate(270)"/>
+    <path d="M0,-84 L10,-24 L0,0 L-10,-24Z" fill="#7A8E9C" transform="rotate(180)"/>
+    <path d="M0,-116 L13,-36 L0,0 L-13,-36Z" fill="#f0a040"/>
+    <circle r="20" fill="none" stroke="#B8883A" stroke-width="2.5"/>
+    <circle r="11" fill="#f0a040"/>
+    <text x="0" y="-129" text-anchor="middle" font-family="Ubuntu Sans, sans-serif" font-size="24" font-weight="700" fill="white">N</text>
+    <text x="-137" y="8" text-anchor="middle" font-family="Ubuntu Sans, sans-serif" font-size="18" font-weight="600" fill="#D4A860">W</text>
+    <text x="137" y="8" text-anchor="middle" font-family="Ubuntu Sans, sans-serif" font-size="18" font-weight="600" fill="#8EA4B0">E</text>
+    <text x="0" y="144" text-anchor="middle" font-family="Ubuntu Sans, sans-serif" font-size="18" font-weight="600" fill="#8EA4B0">S</text>
+  </g>
+  <text x="256" y="410" text-anchor="middle" font-family="Ubuntu Sans, sans-serif" font-size="90" font-weight="800" style="letter-spacing:-1px">
+    <tspan fill="#0D2B4E">Nav</tspan><tspan fill="#f0a040"> It</tspan>
+  </text>
+  <text x="256" y="450" text-anchor="middle" font-family="Ubuntu Sans, sans-serif" font-size="26" font-weight="600" fill="#5BB8D4" style="letter-spacing:2px">PLAN IT · SAIL IT</text>
+</svg>
