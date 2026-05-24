@@ -9,7 +9,7 @@
   "theme_color": "#080f18",
   "icons": [
     {
-      "src": "icon.png",
+      "src": "navit-logo-dark.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

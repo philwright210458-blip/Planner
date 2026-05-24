@@ -10,6 +10,8 @@ const APP_ASSETS = [
     './app.js',
     './manifest.json',
     './icon.png',
+    './navit-logo-dark.png',
+    './navit-logo-dark.svg',
     './sw.js',
     'https://unpkg.com/leaflet/dist/leaflet.css',
     'https://unpkg.com/leaflet/dist/leaflet.js'
