@@ -2519,12 +2519,16 @@ body.route-editing .summary-chip-edit .summary-action-btn {
     }
 
     .top-route-stat {
-        min-width: 60px;
-        padding: 5px 7px;
+        min-width: 48px;
+        padding: 4px 6px;
+    }
+
+    .top-route-stat-label {
+        font-size: 10px;
     }
 
     .top-route-stat-value {
-        font-size: 1rem;
+        font-size: 0.85rem;
     }
 
     .leg-rail-card.selected {
